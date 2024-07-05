@@ -8,5 +8,8 @@
 	<true/>
 	<key>com.apple.security.network.server</key>
 	<true/>
+	<!-- クライアント側の場合 -->
+	<key>com.apple.security.network.client</key>
+	<true/>
 </dict>
 </plist>

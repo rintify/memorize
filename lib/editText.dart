@@ -1,4 +1,4 @@
-import 'dart:ffi';
+
 
 import 'package:flutter/material.dart';
 import 'package:memorize/data.dart';
@@ -69,6 +69,12 @@ class _EditTextDialogState extends State<EditTextDialog> {
     return -1;
   }
 
+  final style = TextButton.styleFrom(
+    padding: EdgeInsets.symmetric(horizontal: 15.0, vertical: 15.0), // 余白を指定
+    minimumSize: Size(0, 0), // 最小サイズを指定（必要に応じて調整）
+    tapTargetSize: MaterialTapTargetSize.padded, // タップ領域を小さくする
+  );
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -81,18 +87,28 @@ class _EditTextDialogState extends State<EditTextDialog> {
       ),
       actions: [
         TextButton(
+          style: style,
+          child: Text('/'),
+          onPressed: () {
+            _insertKakko('/','/');
+          },
+        ),
+        TextButton(
+          style: style,
           child: Text('{}'),
           onPressed: () {
             _insertKakko('{','}');
           },
         ),
         TextButton(
+          style: style,
           child: Text('<>'),
           onPressed: () {
             _insertKakko('<','>');
           },
         ),
         TextButton(
+          style: style,
           onPressed: () {
             widget.onResult(_controller.text);
             Navigator.of(context).pop();

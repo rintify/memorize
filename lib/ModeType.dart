@@ -61,7 +61,7 @@ class TypeModeView extends HookWidget {
       while (current.value < list.length - 1 && list[current.value + 1].$3.isEmpty) current.value++;
     };
 
-    Iterable<Iterable<C>> viewCss = [input.value.characters.map((c) => C(c, null))];
+    Iterable<Iterable<C>> viewCss = [input.value.characters.map((c) => C(c, null, 0))];
 
     try {
       viewCss = [

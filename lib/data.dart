@@ -1,11 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import 'package:memorize/data.dart';
-import 'package:memorize/editText.dart';
-import 'package:memorize/main.dart';
-import 'package:memorize/ModeNormal.dart';
+import 'package:http/http.dart' as http;
+import 'package:encrypt/encrypt.dart' as encrypt;
 
 class Card{
   String answer;
@@ -18,6 +17,7 @@ class Card{
 class TextsProvider with ChangeNotifier {
   List<Card> texts = [Card('', '', {})];
   int start = 0;
+  bool online = false;
 
   List<int> filter(){
     final List<int> indexs = [];
@@ -93,4 +93,65 @@ class TextsProvider with ChangeNotifier {
       print("Error reading file: $e");
     }
   }
+
+
+  Future<bool> fetch() async {try{
+    final response = await http.get(Uri.parse('https://ri-n.com/fetch.php'));
+
+    print(response.statusCode);
+    if (response.statusCode != 200) return false;
+
+    print(response.body);
+    final script = decryptData(response.body);
+    print(script);
+    fromScripts(script);
+    
+    return true;
+  }catch(e){print('fetch: $e'); return false;}}
+
+Future<bool> send() async {
+  try {
+    final encryptedData = encryptData(toScripts());
+    print('Sending encrypted data...');
+    final response = await http.post(
+      Uri.parse('https://ri-n.com/send.php'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode({'password': 'wvLb5bkBkDgK2UfTXYhAtHEJyNqtaZUf', 'data': encryptedData}),
+    );
+
+    if (response.statusCode != 200) {
+      print('Failed to send data. Status code: ${response.statusCode}');
+      return false;
+    }
+
+    print('Response received: ${response.body}');
+
+    if(response.body != 'Data saved successfully') return false;
+
+    print('Data sent successfully.');
+    return true;
+  } catch (e) {
+    print('Exception occurred: $e');
+    return false;
+  }
+}
+
+
+}
+
+final key = encrypt.Key.fromUtf8('dUyrHy3WF3cBciZKd5Harzs1fPlkASY7'); // 32文字のキーを指定
+final iv = encrypt.IV.fromUtf8('gT70hlCvkM5VpXqR');
+
+String encryptData(String plainText) {
+  final encrypter = encrypt.Encrypter(encrypt.AES(key));
+  final encrypted = encrypter.encrypt(plainText, iv: iv);
+  return encrypted.base64;
+}
+
+String decryptData(String encryptedText) {
+  final encrypter = encrypt.Encrypter(encrypt.AES(key));
+  final decrypted = encrypter.decrypt64(encryptedText, iv: iv);
+  return decrypted;
 }

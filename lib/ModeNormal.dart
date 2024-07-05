@@ -17,7 +17,6 @@ Widget NormalModeView(String text, ObjectRef<void Function()> onReset){
     },[text]);
     
     return Container(
-      color: Color(0),
       alignment: Alignment.center,
       child: CharsView(
         cs,
@@ -30,8 +29,9 @@ class C {
   final String c;
   final List<String> hurigana = [];
   final int? q;
+  final int segment;
 
-  C(this.c, this.q);
+  C(this.c, this.q, this.segment);
 }
 
 const double fontSize = 20;
@@ -68,6 +68,7 @@ List<List<C>> translateText(String text) {
   bool qMode = false;
   int qIndex = 0;
   List<List<C>> cs = [[]];
+  int segment = 0;
   for (var rune in text.runes) {
     final c = String.fromCharCode(rune);
     if (huriMode && c == '}') {
@@ -83,6 +84,8 @@ List<List<C>> translateText(String text) {
     } else if (c == '\n') {
       cs.add([]);
       reqHuri = null;
+    } else if(c == '/'){
+      segment ++;
     } else if (c == '{')
       huriMode = true;
     else if (rune < 0x20) {
@@ -92,12 +95,12 @@ List<List<C>> translateText(String text) {
         (rune >= 0x4E00 && rune <= 0x9FFF) ||
         (rune >= 0xF900 && rune <= 0xFAFF) ||
         (rune >= 0x20000 && rune <= 0x3FFFF)) {
-      final a = C(c, qMode ? qIndex : null);
+      final a = C(c, qMode ? qIndex : null, segment);
       cs.last.add(a);
       reqHuri ??= a;
     } else {
       reqHuri = null;
-      cs.last.add(C(c, qMode ? qIndex : null));
+      cs.last.add(C(c, qMode ? qIndex : null, segment));
     }
 
     if (cs.last.length > 25) {
