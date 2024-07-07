@@ -27,14 +27,14 @@ class TextsProvider with ChangeNotifier {
     return indexs;
   }
 
-  Future<void> addBookmark(int index) async {
-    texts[index].tags.add('bookmark');
+  Future<void> addTag(int index, String name) async {
+    texts[index].tags.add(name);
     notifyListeners();
     await saveToFile();
   }
 
-  Future<void> removeBookmark(int index) async {
-    texts[index].tags.remove('bookmark');
+  Future<void> removTag(int index, String name) async {
+    texts[index].tags.remove(name);
     notifyListeners();
     await saveToFile();
   }

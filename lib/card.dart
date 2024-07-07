@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:memorize/ModeBlank.dart';
-import 'package:memorize/ModeNormal.dart';
-import 'package:memorize/ModeSegment.dart';
-import 'package:memorize/ModeType.dart';
+import 'package:memorize/c.dart';
 import 'package:memorize/data.dart';
 import 'package:memorize/editText.dart';
 import 'package:provider/provider.dart';
@@ -11,15 +8,15 @@ import 'package:provider/provider.dart';
 
 class CardView extends HookWidget {
   final int card;
-  final int mode;
+  final Widget child;
+  final List<IconButton> buttons;
 
-  CardView(this.card,this.mode);
+  CardView(this.card,this.child,{this.buttons = const[]});
 
   @override
   Widget build(BuildContext context) {
     final textsProvider = Provider.of<TextsProvider>(context);
     final isBookmarked = useState<bool>(textsProvider.texts[card].tags.contains('bookmark'));
-    final onReset = useRef<void Function()>(() {});
 
     return Column(
       children: [
@@ -28,23 +25,13 @@ class CardView extends HookWidget {
             children: [
               Expanded(
                 child: 
-                  mode == 0 ? NormalModeView(
-                    textsProvider.texts[card].answer,
-                    onReset,
-                  ) : mode == 1 ? BlankModeView(
-                    textsProvider.texts[card].answer,
-                    onReset,
-                  ) : mode == 2 ? TypeModeView(
-                    textsProvider.texts[card].answer,
-                    onReset,
-                  ) : SegmentModeView(textsProvider.texts[card].answer,
-                    onReset,),
+                  child
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(10,10,10,0),
                 child: Container(
                   alignment: Alignment.topCenter,
-                  child: CharsView(translateText(textsProvider.texts[card].question), (c) => noqchar(c)),
+                  child: CharsView(Chars(textsProvider.texts[card].question)),
                 ),
               ),
             ],
@@ -53,10 +40,7 @@ class CardView extends HookWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            IconButton(
-              onPressed: onReset.value,
-              icon: const Icon(Icons.replay),
-            ),
+            ...buttons,
             IconButton(
               onPressed: () {
                 editText(context, textsProvider.toScript(card), (text) {
@@ -67,15 +51,15 @@ class CardView extends HookWidget {
             ),
             IconButton(
               icon: Icon(
-                isBookmarked.value ? Icons.bookmark : Icons.bookmark_add_outlined,
+                isBookmarked.value ? Icons.label : Icons.label_outline,
                 color: isBookmarked.value ? Colors.amber : null,
               ),
               onPressed: () {
                 isBookmarked.value = !isBookmarked.value;
                 if (isBookmarked.value) {
-                  textsProvider.addBookmark(card);
+                  textsProvider.addTag(card,'bookmark');
                 } else {
-                  textsProvider.removeBookmark(card);
+                  textsProvider.removTag(card,'bookmark');
                 }
               },
             ),

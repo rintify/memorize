@@ -26,3 +26,15 @@ class Use extends HookWidget {
     return buildFunction(context);
   }
 }
+
+int clamp(int v, int min, int max){
+  if(v > max) v = max;
+  if(v < min) v = min;
+  return v;
+}
+
+E atClamp<E>(Iterable<E> a, int i){
+  if(i < 0) i = 0;
+  if(i >= a.length) i = a.length - 1;
+  return a.elementAt(i);
+}

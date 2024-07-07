@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:memorize/ModeBlank.dart';
-import 'package:memorize/ModeType.dart';
+import 'package:memorize/ModeSegment.dart';
 import 'package:memorize/card.dart';
+import 'package:memorize/dropmenu.dart';
 import 'package:memorize/pagePicker.dart';
 import 'package:memorize/toast.dart';
 import 'package:memorize/util.dart';
@@ -14,6 +15,7 @@ import 'package:memorize/main.dart';
 import 'package:memorize/ModeNormal.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:memorize/c.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -82,8 +84,26 @@ class MainView extends HookWidget {
         backgroundColor: Color(0x00ffffff),
         surfaceTintColor: Color(0),
         actions: [
+          DropButton(
+          items: [
+            DropItem(
+              value: 0,
+              text: '閲覧',
+            ),
+            DropItem(
+              value: 1,
+              text: '穴埋め',
+            ),
+            DropItem(
+              value: 2,
+              text: '暗唱',
+            ),
+          ],
+          onSelected: (newValue) {
+            mode.value = newValue ?? 0;
+          }),
           PopupMenuButton<int>(
-            icon: Icon(Icons.sync),
+            icon: Icon(Icons.cloud_queue),
             onSelected: (value) {
               switch (value) {
                 case 1:
@@ -123,17 +143,6 @@ class MainView extends HookWidget {
             ],
           ),
           IconButton(
-            onPressed: () {
-              mode.value = (mode.value + 1) % 4;
-            },
-            icon: Icon([
-              Icons.circle_outlined,
-              Icons.question_mark,
-              Icons.keyboard,
-              Icons.segment
-            ][mode.value]),
-          ),
-          IconButton(
             icon: Icon(Icons.filter_list),
             color: _bookmarkFilter.value ? Colors.amber : null,
             onPressed: () {
@@ -168,9 +177,10 @@ class MainView extends HookWidget {
           _currentCard.value = _deck.value[value];
         },
         itemBuilder: (BuildContext context, int index) =>
-            index >= _deck.value.length || index < 0
-                ? Container()
-                : CardView(_deck.value[index], mode.value),
+            index >= _deck.value.length || index < 0 ? Container() : 
+            mode.value == 0 ? NormalModeView(_deck.value[index]) :
+            mode.value == 1 ? BlankModeView(_deck.value[index]) :
+            SegmentModeView(_deck.value[index],_bookmarkFilter.value) 
       ),
     );
   }
