@@ -60,6 +60,12 @@ class CardView extends HookWidget {
                   textsProvider.addTag(card,'bookmark');
                 } else {
                   textsProvider.removTag(card,'bookmark');
+                  final ans = Chars(textsProvider.texts[card].answer);
+                  ans.segments.forEach((se){
+                    se.tags.remove('bookmark');
+                  });
+                  textsProvider.texts[card].answer = ans.toScript();
+                  textsProvider.saveToFile();
                 }
               },
             ),

@@ -38,7 +38,7 @@ class BlankModeView extends HookWidget {
           child: CharsView(cs, cview: (cs, pos) {
             final blank = findRange(cs.blanks, pos);
             if(blank == null || blank.id < current.value) return noqchar(cs, pos);
-            return character('？', qstyle);
+            return character('？'.codeUnitAt(0), qstyle);
           },),
         ),
       ),

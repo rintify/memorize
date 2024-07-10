@@ -49,7 +49,7 @@ class SegmentModeView extends HookWidget {
                   ? 0xffffffffff
                   : segments[current.value].start;
               if (pos < seg) return noqchar(cs, pos);
-              return character(' ', style);
+              return character(' '.codeUnitAt(0), style);
             },
           ),
         ),
