@@ -1,31 +1,29 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:memorize/ModeBlank.dart';
 import 'package:memorize/ModeSegment.dart';
+import 'package:memorize/ModeSegmentBlank.dart';
+import 'package:memorize/ModeTest.dart';
+import 'package:memorize/Search.dart';
 import 'package:memorize/card.dart';
 import 'package:memorize/dropmenu.dart';
 import 'package:memorize/pagePicker.dart';
 import 'package:memorize/toast.dart';
 import 'package:memorize/util.dart';
 import 'package:provider/provider.dart';
-import 'package:memorize/data.dart';
+import 'package:memorize/Cards.dart';
 import 'package:memorize/editText.dart';
-import 'package:memorize/main.dart';
-
 import 'package:memorize/ModeNormal.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:memorize/c.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final textsProvider = TextsProvider();
-  await textsProvider.loadFromFile();
+  final cards = Cards();
+  await cards.load();
 
   runApp(
     ChangeNotifierProvider(
-      create: (context) => textsProvider,
+      create: (context) => cards,
       child: MyApp(),
     ),
   );
@@ -35,7 +33,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: MainView(),
+      home: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(child: MainView())),
       debugShowCheckedModeBanner: false,
       theme: ThemeData(),
     );
@@ -45,143 +45,148 @@ class MyApp extends StatelessWidget {
 class MainView extends HookWidget {
   @override
   Widget build(BuildContext context) {
-    final textsProvider = Provider.of<TextsProvider>(context, listen: false);
-    final _pageController = usePageController();
-    final _currentCard = useState<int>(0);
-    final _bookmarkFilter = useState<bool>(false);
-    final _deck = useState<List<int>>(
-        List.generate(textsProvider.texts.length, (index) => index));
+    print('main');
+    final cards = Provider.of<Cards>(context);
+    final pageController = usePageController();
 
-    updateDeck() {
-      _deck.value = _bookmarkFilter.value
-          ? textsProvider.filter()
-          : List.generate(textsProvider.texts.length, (index) => index);
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        int nextCard = findClosestCard(_currentCard.value, _deck.value);
-
-        int pageIndex = _deck.value.indexOf(nextCard);
-        if (pageIndex != -1) {
-          _pageController.jumpToPage(pageIndex);
-        }
-      });
-    }
-
-    useEffect(updateDeck, [
-      _bookmarkFilter.value,
-    ]);
-
-    useEffect(() {
-      textsProvider.addListener(updateDeck);
-      return () => textsProvider.removeListener(updateDeck);
-    }, []);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!isInteger(pageController.page)) return;
+      if (cards.deck.indexOf(cards.current) == pageController.page) return;
+      int pageIndex = cards.deck.indexOf(findClosestCard(cards.current, cards.deck));
+      if (pageIndex != -1) {
+        pageController.jumpToPage(pageIndex);
+      }
+    });
 
     final mode = useState(0);
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Color(0x00ffffff),
-        surfaceTintColor: Color(0),
-        actions: [
-          DropButton(
-          items: [
-            DropItem(
-              value: 0,
-              text: '閲覧',
-            ),
-            DropItem(
-              value: 1,
-              text: '穴埋め',
-            ),
-            DropItem(
-              value: 2,
-              text: '暗唱',
-            ),
-          ],
-          onSelected: (newValue) {
-            mode.value = newValue ?? 0;
-          }),
-          PopupMenuButton<int>(
-            icon: Icon(Icons.cloud_queue),
-            onSelected: (value) {
-              switch (value) {
-                case 1:
-                  confirmDialog(context, 'ダウンロードしますか？\nいままでのデータは上書きされます', () {
-                    textsProvider.fetch().then((res) {
-                      showToast(context, res ? '成功' : '失敗');
-                    });
-                  });
-
-                  break;
-                case 2:
-                  textsProvider.send().then((res) {
-                    showToast(context, res ? '成功' : '失敗');
-                  });
-                  break;
-                case 3:
-                  editText(context, textsProvider.toScripts(), (script) {
-                    textsProvider.fromScripts(script);
-                    textsProvider.saveToFile();
-                  });
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 1,
-                child: Text("ダウンロード"),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60.0), // AppBarの高さを設定
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          color: Colors.white,
+          child: Row(
+            children: [
+              SearchTextField(onSearch: (a){
+                cards.setFilter(a);
+              }),
+              DropButton(
+                items: [
+                  DropItem(
+                    value: 0,
+                    text: '閲覧',
+                  ),
+                  DropItem(
+                    value: 1,
+                    text: '穴埋め',
+                  ),
+                  DropItem(
+                    value: 2,
+                    text: '暗唱',
+                  ),
+                  DropItem(
+                    value: 3,
+                    text: '模試',
+                  ),
+                  DropItem(
+                    value: 4,
+                    text: '節埋め',
+                  ),
+                ],
+                onSelected: (newValue) {
+                  mode.value = newValue ?? 0;
+                },
               ),
-              PopupMenuItem(
-                value: 2,
-                child: Text("アップロード"),
+              PopupMenuButton<int>(
+                icon: const Icon(Icons.cloud_queue),
+                onSelected: (value) {
+                  switch (value) {
+                    case 1:
+                      confirmDialog(context, 'ダウンロードしますか？\nいままでのデータは上書きされます', () {
+                        cards.download().then((res) {
+                          showToast(context, res ? '成功' : '失敗');
+                        });
+                      });
+                      break;
+                    case 2:
+                      cards.upload().then((res) {
+                        showToast(context, res ? '成功' : '失敗');
+                      });
+                      break;
+                    case 3:
+                      editText(context, cards.getScripts(), (script) {
+                        cards.setScripts(script);
+                        cards.save();
+                      });
+                      break;
+                    case 4:
+                      cards.cancelMarkedTags();
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 1,
+                    child: Text("ダウンロード"),
+                  ),
+                  const PopupMenuItem(
+                    value: 2,
+                    child: Text("アップロード"),
+                  ),
+                  const PopupMenuItem(
+                    value: 3,
+                    child: Text("データ編集"),
+                  ),
+                  const PopupMenuItem(
+                    value: 4,
+                    child: Text("無効タグ解除"),
+                  ),
+                ],
               ),
-              PopupMenuItem(
-                value: 3,
-                child: Text("データ編集"),
+              IconButton(
+                icon: const Icon(Icons.menu_book),
+                onPressed: () => showPagePicker(context, cards.current, (index) {
+                  cards.setCurrent(cards.deck[index]);
+                }),
               ),
             ],
           ),
-          IconButton(
-            icon: Icon(Icons.filter_list),
-            color: _bookmarkFilter.value ? Colors.amber : null,
-            onPressed: () {
-              _bookmarkFilter.value = !_bookmarkFilter.value;
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.menu_book),
-            onPressed: () =>
-                showPagePicker(context, _currentCard.value, (nextCard) {
-              if (!_deck.value.contains(nextCard)) {
-                nextCard = findClosestCard(nextCard, _deck.value);
-              }
-
-              int pageIndex = _deck.value.indexOf(nextCard);
-              if (pageIndex != -1) {
-                _pageController.jumpToPage(pageIndex);
-              }
-            }),
-          ),
-        ],
+        ),
       ),
       body: PageView.builder(
-        controller: _pageController,
-        scrollDirection: Axis.vertical,
-        reverse: false,
-        onPageChanged: (value) {
-          if (value >= _deck.value.length || value < 0) {
-            _pageController.jumpToPage(_deck.value.length);
-            return;
-          }
-          _currentCard.value = _deck.value[value];
-        },
-        itemBuilder: (BuildContext context, int index) =>
-            index >= _deck.value.length || index < 0 ? Container() : 
-            mode.value == 0 ? NormalModeView(_deck.value[index]) :
-            mode.value == 1 ? BlankModeView(_deck.value[index]) :
-            SegmentModeView(_deck.value[index],_bookmarkFilter.value) 
-      ),
+          controller: pageController,
+          scrollDirection: Axis.vertical,
+          reverse: false,
+          onPageChanged: (index) {
+            if (index >= cards.deck.length || index < 0) return;
+            cards.setCurrent(cards.deck[index], false);
+          },
+          itemBuilder: (BuildContext context, int index) {
+            if(index >= cards.deck.length){
+              return Center(child: TextButton(child: const Text('はじめに戻る'),onPressed: (){
+                cards.updateDeck();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                    pageController.jumpToPage(0);
+                });
+              },));
+            }
+            if (index < 0) return Container();
+            final card = cards.getCard(cards.deck[index]);
+            if (card == null) return Container();
+
+            return ChangeNotifierProvider.value(
+              value: cards.getCard(cards.deck[index])!,
+              child: mode.value == 0 ? NormalModeView()
+                  : mode.value == 1 ? BlankModeView()
+                  : mode.value == 2 ? SegmentModeView()
+                  : mode.value == 3 ? TestModeView() 
+                  : mode.value == 4 ? SegmentBlankModeView()
+                  : NormalModeView(),
+                    
+            );
+          }),
     );
   }
 }

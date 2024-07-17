@@ -1,150 +1,46 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Card;
+import 'package:memorize/CardText.dart';
 import 'package:memorize/util.dart';
+import 'package:provider/provider.dart';
 
 typedef RunesBuffer = List<int>;
 
-class Chars {
-  final RunesBuffer runes = [];
-  final List<Segment> segments = [Segment(0, 0)];
-  final List<int> lines = [0];
-  final List<Hurigana> huriganas = [];
-  final List<Blank> blanks = [];
+RunesBuffer codeNumber(String str) {
+  str = toHankaku(str);
+  RegExp regExp = RegExp(r'\((\d+)\)');
+  RunesBuffer runes = [];
+  int lastMatchEnd = 0;
 
-  Chars(String script) {
-    final scriptRunes = codeNumber(script);
+  Iterable<Match> matches = regExp.allMatches(str);
 
-    bool modeHurigana = false;
-    bool modeBlank = false;
-    bool modeTag = false;
-    int lastNoReqHurigana = -1;
-
-    for (var rune in scriptRunes) {
-      final c = String.fromCharCode(rune);
-
-      if (modeHurigana) {
-        if (c == '}') {
-          modeHurigana = false;
-        } else {
-          huriganas.last.text += c;
-        }
-      } else if (modeTag) {
-        if (c == ' ') {
-          modeTag = false;
-        } else {
-          segments.last.tags.last += c;
-        }
-      } else if (modeBlank && c == '>') {
-        modeBlank = false;
-        blanks.last.end = runes.length;
-      } else if (c == '\n') {
-        lines.add(runes.length);
-      } else if (c == '<') {
-        modeBlank = true;
-        blanks.add(Blank(id: blanks.length, start: runes.length));
-      } else if (c == '#') {
-        modeTag = true;
-        segments.last.tags.add('');
-      } else if (c == '{') {
-        modeHurigana = true;
-        huriganas.add(
-            Hurigana(start: lastNoReqHurigana + 1, end: runes.length, text: ''));
-        lastNoReqHurigana = runes.length - 1;
-      } else if (c == '/') {
-        segments.add(Segment(segments.length, runes.length));
-      } else if (rune < 0x20) {
-      } else {
-        if (!((rune >= 0x2E80 && rune <= 0x2FDF) ||
-            (rune == 0x3005) ||
-            (rune >= 0x3400 && rune <= 0x4DBF) ||
-            (rune >= 0x4E00 && rune <= 0x9FFF) ||
-            (rune >= 0xF900 && rune <= 0xFAFF) ||
-            (rune >= 0x20000 && rune <= 0x3FFFF))) {
-          lastNoReqHurigana = runes.length;
-        }
-
-        runes.add(rune);
-      }
-    }
+  for (Match match in matches) {
+    runes.addAll(str.substring(lastMatchEnd, match.start).runes);
+    int number = int.parse(match.group(1)!);
+    int newCodePoint = clamp(EXTRA_FIRST_CODE + number, 0, 0x10FFFF);
+    runes.add(newCodePoint);
+    lastMatchEnd = match.end;
   }
-
-  String toScript() {
-    final Map<int, List<String>> insert = {};
-    for (final segment in segments) {
-      (insert[segment.start] ??= []).add(
-          '${segment.start == 0 ? '' : '/'}${segment.tags.map((e) => '#$e ').join('')}');
-    }
-    for (final line in lines) {
-      if (line != 0) (insert[line] ??= []).add('\n');
-    }
-    for (final blank in blanks) {
-      if (blank.start > blank.end) continue;
-      (insert[blank.start] ??= []).add('<');
-      (insert[blank.end] ??= []).add('>');
-    }
-    for (final hurigana in huriganas) {
-      if (hurigana.start > hurigana.end) continue;
-      (insert[hurigana.end] ??= []).add('{${hurigana.text}}');
-    }
-
-    return decodeNumber(insertAtPositions(runes, insert));
-  }
-
-  RunesBuffer insertAtPositions(RunesBuffer input, Map<int, List<String>> insert) {
-    RunesBuffer result = [];
-    int inputLength = input.length;
-
-    for (int i = 0; i <= inputLength; i++) {
-      if (insert.containsKey(i)) {
-        for (final s in insert[i]!) {
-          result.addAll(s.runes);
-        }
-      }
-      if (i < inputLength) {
-        result.add(input.elementAt(i));
-      }
-    }
-
-    return result;
-  }
-}
-
-
-  RunesBuffer codeNumber(String str) {
-    str = toHankaku(str);
-    RegExp regExp = RegExp(r'\((\d+)\)');
-    RunesBuffer runes = [];
-    int lastMatchEnd = 0;
-
-    Iterable<Match> matches = regExp.allMatches(str);
-
-    for (Match match in matches) {
-      runes.addAll(str.substring(lastMatchEnd, match.start).runes);
-      int number = int.parse(match.group(1)!);
-      int newCodePoint = clamp(EXTRA_FIRST_CODE + number, 0, 0x10FFFF) ;
-      runes.add(newCodePoint);
-      lastMatchEnd = match.end;
-    }
   runes.addAll(str.substring(lastMatchEnd).runes);
 
   return runes;
 }
+
 const int EXTRA_FIRST_CODE = 0xE01F0;
-  String decodeNumber(RunesBuffer runes) {
-    
-    StringBuffer modifiedString = StringBuffer();
+String decodeNumber(RunesBuffer runes) {
+  StringBuffer modifiedString = StringBuffer();
 
-    for (int i = 0; i < runes.length; i++) {
-      final codePoint = runes.elementAt(i);
-      if (codePoint >= EXTRA_FIRST_CODE) {
-        int number = codePoint - EXTRA_FIRST_CODE;
-        modifiedString.write('($number)');
-      } else {
-        modifiedString.writeCharCode(codePoint);
-      }
+  for (int i = 0; i < runes.length; i++) {
+    final codePoint = runes.elementAt(i);
+    if (codePoint >= EXTRA_FIRST_CODE) {
+      int number = codePoint - EXTRA_FIRST_CODE;
+      modifiedString.write('($number)');
+    } else {
+      modifiedString.writeCharCode(codePoint);
     }
-
-    return modifiedString.toString();
   }
+
+  return modifiedString.toString();
+}
 
 String toHankaku(String input) {
   StringBuffer buffer = StringBuffer();
@@ -163,7 +59,6 @@ String toHankaku(String input) {
   }
   return buffer.toString();
 }
-
 
 T? findRange<T extends Range>(List<T> list, int v) {
   for (var i = 0; i < list.length; i++) {
@@ -213,10 +108,11 @@ const TextStyle style =
 const TextStyle qstyle = TextStyle(
     fontSize: fontSize, height: 1.1, color: Colors.red, fontFamily: 'Serif');
 const TextStyle hstyle =
-    TextStyle(fontSize: fontSize * 0.35, height: 1.1, fontFamily: 'Serif');
+    TextStyle(fontSize: fontSize * 0.4, height: 1.1, fontFamily: 'Serif');
+final space = (style.fontSize ?? 0) * 0.4;
 
-Widget CharsView(Chars cs,
-    {Widget Function(Chars cs, int pos) cview = noqchar}) {
+Widget CardTextView(CardText cs,
+    {Widget Function(CardText cs, int pos) cview = noqchar, bool end = false}) {
   final List<Range> viewLines = [];
   int lineI = 0;
   int pos = cs.lines[lineI];
@@ -233,29 +129,26 @@ Widget CharsView(Chars cs,
     if (lineI >= cs.lines.length) break;
   }
 
-  final space = (style.fontSize ?? 0) * 0.4;
-
   return Row(
     mainAxisSize: MainAxisSize.min,
     textDirection: TextDirection.rtl,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      for (final viewLine in viewLines)
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: space),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (var i = viewLine.start; i < viewLine.end; i++) cview(cs, i)
-            ],
-          ),
+      for (int j = 0; j < viewLines.length; j++)
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var i = viewLines[j].start; i < viewLines[j].end; i++)
+              cview(cs, i),
+            ...(end && j == viewLines.length - 1 ? [const Text('﹂',style: TextStyle(fontSize: 20,color: Colors.blueAccent))] : [])
+          ],
         ),
     ],
   );
 }
 
-Widget noqchar(Chars cs, int pos) {
+Widget noqchar(CardText cs, int pos) {
   final hurigana = find(cs.huriganas, (h) => h.start == pos);
   final char = cs.runes[pos];
   if (hurigana == null) {
@@ -273,8 +166,8 @@ Widget noqchar(Chars cs, int pos) {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.from(
-                  hurigana.text.characters.map((c) => character(c.codeUnits[0], hstyle))),
+              children: List.from(hurigana.text.characters
+                  .map((c) => character(c.codeUnits[0], hstyle))),
             ),
           ),
         ),
@@ -284,18 +177,20 @@ Widget noqchar(Chars cs, int pos) {
 }
 
 Widget character(int rune, TextStyle style) {
-  if(rune >= EXTRA_FIRST_CODE){
+  if (rune >= EXTRA_FIRST_CODE) {
     return Text('(${rune - EXTRA_FIRST_CODE})', style: style);
   }
 
   final char = String.fromCharCode(rune);
 
-  if (VerticalRotated.map[char] != null) {
-    return Text(VerticalRotated.map[char]!, style: style);
-  }
-  else {
-    return Text(char, style: style);
-  }
+  return Container(
+    color: const Color(0x00000000),
+    child: Padding(
+        padding: EdgeInsets.fromLTRB(space, 0, space, 0),
+        child: VerticalRotated.map[char] != null
+            ? Text(VerticalRotated.map[char]!, style: style)
+            : Text(char, style: style)),
+  );
 }
 
 Map<String, String> romajis = {

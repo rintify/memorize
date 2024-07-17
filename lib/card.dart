@@ -1,77 +1,59 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:memorize/c.dart';
-import 'package:memorize/data.dart';
-import 'package:memorize/editText.dart';
+import 'dart:collection';
+
+import 'package:flutter/material.dart' hide Card;
+import 'package:memorize/CardText.dart';
+import 'package:memorize/Cards.dart';
 import 'package:provider/provider.dart';
 
+class Card with ChangeNotifier{
+  late CardText _question;
+  late CardText _answer;
+  late Set<String> _tags;
+  final int key;
 
-class CardView extends HookWidget {
-  final int card;
-  final Widget child;
-  final List<IconButton> buttons;
+  Card(this.key, String script){
+    setScript(script);
+  }
 
-  CardView(this.card,this.child,{this.buttons = const[]});
+  UnmodifiableListView<String> get tags{
+    return UnmodifiableListView(_tags);
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    final textsProvider = Provider.of<TextsProvider>(context);
-    final isBookmarked = useState<bool>(textsProvider.texts[card].tags.contains('bookmark'));
+  CardText get question => _question;
 
-    return Column(
-      children: [
-        Expanded(
-          child: Row(
-            children: [
-              Expanded(
-                child: 
-                  child
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10,10,10,0),
-                child: Container(
-                  alignment: Alignment.topCenter,
-                  child: CharsView(Chars(textsProvider.texts[card].question)),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            ...buttons,
-            IconButton(
-              onPressed: () {
-                editText(context, textsProvider.toScript(card), (text) {
-                  textsProvider.fromScript(card, text);
-                });
-              },
-              icon: Icon(Icons.create),
-            ),
-            IconButton(
-              icon: Icon(
-                isBookmarked.value ? Icons.label : Icons.label_outline,
-                color: isBookmarked.value ? Colors.amber : null,
-              ),
-              onPressed: () {
-                isBookmarked.value = !isBookmarked.value;
-                if (isBookmarked.value) {
-                  textsProvider.addTag(card,'bookmark');
-                } else {
-                  textsProvider.removTag(card,'bookmark');
-                  final ans = Chars(textsProvider.texts[card].answer);
-                  ans.segments.forEach((se){
-                    se.tags.remove('bookmark');
-                  });
-                  textsProvider.texts[card].answer = ans.toScript();
-                  textsProvider.saveToFile();
-                }
-              },
-            ),
-          ],
-        ),
-      ],
-    );
+  CardText get answer => _answer;
+
+  void notify(){
+    notifyListeners();
+  }
+
+  void addTag(String tag){
+    _tags.add(tag);
+    notifyListeners();
+  }
+
+  void removeTag(String tag){
+    _tags.remove(tag);
+    notifyListeners();
+  }
+
+  void setScript(String script) {
+    final a = script.split('\n##\n');
+    final blocks = List.generate(3,(i) => i < a.length ? a[i] : '');
+
+    _question = CardText(blocks[0]);
+    _answer = CardText(blocks[1]);
+    _tags = Set.from(blocks[2].split(' '));
+    
+    notifyListeners();
+  }
+
+  String getScript() {
+    final script = [
+      _question.toScript(),
+      _answer.toScript(),
+      _tags.join(' '),
+    ].join('\n##\n');
+    return script;
   }
 }

@@ -1,5 +1,6 @@
   import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
 
 int findClosestCard(int card, List<int> deck) {
     if(deck.isEmpty) return -1;
@@ -37,4 +38,25 @@ E atClamp<E>(Iterable<E> a, int i){
   if(i < 0) i = 0;
   if(i >= a.length) i = a.length - 1;
   return a.elementAt(i);
+}
+
+final key =
+    encrypt.Key.fromUtf8('dUyrHy3WF3cBciZKd5Harzs1fPlkASY7'); // 32文字のキーを指定
+final iv = encrypt.IV.fromUtf8('gT70hlCvkM5VpXqR');
+
+String encryptData(String plainText) {
+  final encrypter = encrypt.Encrypter(encrypt.AES(key));
+  final encrypted = encrypter.encrypt(plainText, iv: iv);
+  return encrypted.base64;
+}
+
+String decryptData(String encryptedText) {
+  final encrypter = encrypt.Encrypter(encrypt.AES(key));
+  final decrypted = encrypter.decrypt64(encryptedText, iv: iv);
+  return decrypted;
+}
+
+bool isInteger(num? value) {
+  if(value == null) return false; 
+  return value == value.floor();
 }

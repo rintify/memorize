@@ -1,7 +1,7 @@
 
 
 import 'package:flutter/material.dart';
-import 'package:memorize/data.dart';
+import 'package:memorize/Cards.dart';
 import 'package:memorize/editText.dart';
 import 'package:memorize/main.dart';
 import 'package:memorize/ModeNormal.dart';

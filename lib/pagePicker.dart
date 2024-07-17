@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:memorize/data.dart';
+import 'package:memorize/Cards.dart';
 import 'package:memorize/editText.dart';
 import 'package:memorize/main.dart';
 import 'package:memorize/ModeNormal.dart';
@@ -9,7 +9,7 @@ void showPagePicker(BuildContext context, int current, Function(int index) onRes
   showModalBottomSheet(
     context: context,
     builder: (BuildContext context) {
-      final textsProvider = Provider.of<TextsProvider>(context);
+      final cards = Provider.of<Cards>(context);
       final ScrollController scrollController = ScrollController(
         initialScrollOffset: current * 50.0, // ListTileの高さが固定50.0の場合
       );
@@ -18,9 +18,9 @@ void showPagePicker(BuildContext context, int current, Function(int index) onRes
         height: 300,
         child: ListView.builder(
           controller: scrollController,
-          itemCount: textsProvider.texts.length, // テキストの数に合わせて
+          itemCount: cards.deck.length, // テキストの数に合わせて
           itemBuilder: (context, index) {
-            final q = textsProvider.texts[index].question;
+            final q = cards.cardScripts[cards.deck[index]];
             return Container(
               height: 50.0, // ListTileの高さを固定
               child: ListTile(

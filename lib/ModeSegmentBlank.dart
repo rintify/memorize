@@ -11,8 +11,8 @@ import 'package:memorize/util.dart';
 import 'package:memorize/c.dart';
 import 'package:provider/provider.dart';
 
-class SegmentModeView extends HookWidget {
-  SegmentModeView();
+class SegmentBlankModeView extends HookWidget {
+  SegmentBlankModeView();
 
   @override
   Widget build(BuildContext context) {
@@ -25,13 +25,8 @@ class SegmentModeView extends HookWidget {
           .where((s) => s.tags.contains(cards.filter))
           .toList();
       current.value = 0;
-      return bookmarkSegments.isNotEmpty
-          ? bookmarkSegments
-          : card.answer.segments;
+      return bookmarkSegments;
     }, [cards.filter]);
-
-    final currentSegment = atClamp(segments, current.value);
-
 
     return CardView(
       GestureDetector(
@@ -45,11 +40,9 @@ class SegmentModeView extends HookWidget {
             card.answer,
             end: true,
             cview: (cs, pos) {
-              final seg = current.value >= segments.length
-                  ? 0xffffffffff
-                  : currentSegment.start;
-              if (pos < seg) {
                 final segm = cs.findSegment(pos);
+                final ids = current.value < segments.length ?  segments[current.value].id : 0xffffffff;
+                if(segm.id >= ids && segments.contains(segm)) return character('？'.codeUnitAt(0), qstyle);
                 if (segm.tags.contains(cards.tag)) {
                   return CView(cs, pos, segm, Colors.amber.withAlpha(200), () {
                     segm.tags.remove(cards.tag);
@@ -74,8 +67,7 @@ class SegmentModeView extends HookWidget {
                     cards.save();
                   });
                 }
-              }
-              return character(' '.codeUnitAt(0), style);
+              
             },
           ),
         ),
