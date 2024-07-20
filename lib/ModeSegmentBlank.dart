@@ -22,11 +22,11 @@ class SegmentBlankModeView extends HookWidget {
 
     final segments = useMemoized(() {
       final bookmarkSegments = card.answer.segments
-          .where((s) => s.tags.contains(cards.filter))
+          .where((s) => s.tags.contains(cards.filter.last))
           .toList();
       current.value = 0;
       return bookmarkSegments;
-    }, [cards.filter]);
+    }, [cards.filter.last]);
 
     return CardView(
       GestureDetector(

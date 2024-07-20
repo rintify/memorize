@@ -1,4 +1,6 @@
-  import 'package:flutter/material.dart';
+  import 'dart:ui';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 
@@ -59,4 +61,28 @@ String decryptData(String encryptedText) {
 bool isInteger(num? value) {
   if(value == null) return false; 
   return value == value.floor();
+}
+
+final whiteSpace = RegExp('[ 　\n]+');
+
+class FilterQuery{
+  late List<String> _andWords;
+  late String _last;
+
+  get last => _last;
+
+  FilterQuery(String script){
+    _andWords = script.trim().split(whiteSpace);
+    _last = _andWords.isEmpty ? '' : _andWords.last;
+  }
+
+  bool match(String str) {
+    for (String word in _andWords) {
+      if (!str.contains(word)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
 }

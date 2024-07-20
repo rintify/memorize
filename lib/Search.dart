@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:memorize/TagPicker.dart';
 import 'package:memorize/editText.dart';
+import 'package:memorize/util.dart';
 
 class SearchTextField extends StatefulWidget {
   final Function(String) onSearch;
@@ -35,12 +36,13 @@ class _SearchTextFieldState extends State<SearchTextField> {
             hintText: '検索',
             prefixIcon: GestureDetector(
               onLongPress: () {
-                _controller.text = '';
+                int lastSpaceIndex = _controller.text.lastIndexOf(whiteSpace);
+                _controller.text = lastSpaceIndex < 0 ? '' : _controller.text.substring(0, lastSpaceIndex);
                 widget.onSearch(_controller.text); 
               },
               child: IconButton(onPressed: (){
                 showTagPicker(context, (t){
-                  _controller.text = t;
+                  _controller.text += ' $t';
                   _debounce?.cancel();
                   widget.onSearch(_controller.text); 
                 });

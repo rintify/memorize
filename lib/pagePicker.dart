@@ -11,7 +11,7 @@ void showPagePicker(BuildContext context, int current, Function(int index) onRes
     builder: (BuildContext context) {
       final cards = Provider.of<Cards>(context);
       final ScrollController scrollController = ScrollController(
-        initialScrollOffset: current * 50.0, // ListTileの高さが固定50.0の場合
+        initialScrollOffset: cards.deck.indexOf(current) * 50.0, // ListTileの高さが固定50.0の場合
       );
 
       return Container(
@@ -24,7 +24,7 @@ void showPagePicker(BuildContext context, int current, Function(int index) onRes
             return Container(
               height: 50.0, // ListTileの高さを固定
               child: ListTile(
-                title: Text('${index + 1} - ${q.substring(0,q.length > 10 ? 10 : q.length)}'),
+                title: Text(q.substring(0,q.length > 20 ? 20 : q.length).replaceAll('\n', ' ')),
                 onTap: () {
                   onResult(index);
                   Navigator.pop(context);

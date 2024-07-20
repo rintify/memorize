@@ -28,9 +28,42 @@ class CardView extends HookWidget {
               Expanded(child: child),
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-                child: Container(
-                  alignment: Alignment.topCenter,
-                  child: CardTextView(card.question),
+                child: Column(
+                  children: [
+                    Container(
+                      alignment: Alignment.topCenter,
+                      child: CardTextView(card.question),
+                    ),
+                    IconButton(
+                        onPressed: () {
+                          if (card.tags.contains(cards.tag)) {
+                            card.removeTag(cards.tag);
+                            card.addTag(markTag(cards.tag));
+                            cards.setCard(card.key, card, false);
+                            cards.save();
+                          } else if (card.tags.contains(markTag(cards.tag))) {
+                            card.removeTag(markTag(cards.tag));
+                            cards.setCard(card.key, card, false);
+                            cards.save();
+                          } else {
+                            card.removeTag(markTag(cards.tag));
+                            card.addTag(cards.tag);
+                            cards.setCard(card.key, card, false);
+                            cards.save();
+                          }
+                        },
+                        icon: Icon(
+                          card.tags.contains(markTag(cards.tag)) ||
+                                  card.tags.contains(cards.tag)
+                              ? Icons.bookmark
+                              : Icons.bookmark_outline,
+                          color: card.tags.contains(markTag(cards.tag))
+                              ? Colors.blue
+                              : card.tags.contains(cards.tag)
+                                  ? Colors.amber
+                                  : null,
+                        )),
+                  ],
                 ),
               ),
             ],
@@ -41,28 +74,15 @@ class CardView extends HookWidget {
           children: [
             GestureDetector(
               onTap: () {
-                if (card.tags.contains(cards.tag)) {
-                  card.removeTag(cards.tag);
-                  card.addTag(markTag(cards.tag));
-                  cards.setCard(card.key, card, false);
-                  cards.save();
-                } 
-                else if(card.tags.contains(markTag(cards.tag))){
-                  card.removeTag(markTag(cards.tag));
-                  cards.setCard(card.key, card, false);
-                  cards.save();
-                }
-                else{
-                  card.removeTag(markTag(cards.tag));
-                  card.addTag(cards.tag);
-                  cards.setCard(card.key, card, false);
-                  cards.save();
-                }
-              },
-              onLongPress: () {
                 showTagPicker(context, (tag) {
                   cards.setTag(tag);
                 });
+              },
+              onLongPress: () {
+                showTagEditorMenu(context, cards.tag);
+              },
+              onHorizontalDragEnd: (details) {
+                showTagEditorMenu(context, cards.tag);
               },
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 7, vertical: 3),
@@ -72,9 +92,6 @@ class CardView extends HookWidget {
                   style: TextStyle(
                     fontSize: 17,
                     color: Color.fromARGB(180, 0, 0, 0),
-                    decoration: card.tags.contains(markTag(cards.tag)) || card.tags.contains(cards.tag) ? TextDecoration.underline : null,
-                    decorationColor: card.tags.contains(markTag(cards.tag)) ? Colors.blue : Colors.amber,
-                    decorationThickness: 2.0, // アンダーラインの太さを設定
                   ),
                 ),
               ),
@@ -90,7 +107,9 @@ class CardView extends HookWidget {
               },
               icon: Icon(Icons.create),
             ),
-            Container(width: 10,)
+            Container(
+              width: 10,
+            ),
           ],
         ),
       ],

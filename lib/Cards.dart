@@ -14,22 +14,16 @@ class Cards with ChangeNotifier {
   List<String> _cardScripts = [''];
   List<int> _deck = [];
   int current = -1;
-  String _filter = '';
+  FilterQuery _filter = FilterQuery('');
+
+  FilterQuery get filter => _filter;
+
   String _tag = '#ふせん';
 
   String get tag => _tag;
 
-  String get filter => _filter;
-
-  void cancelMarkedTags(){
-    for (var i = 0; i < _cardScripts.length; i ++) {
-      _cardScripts[i] = _cardScripts[i].replaceAllMapped(RegExp(r'#\*([^ \n]+)'),(m) => '#${m.group(1)}');
-    }
-    notifyListeners();
-  }
-
   void setTag(String value) {
-    if(!RegExp(r'^#[^ #\n*]+$').hasMatch(value)) return;
+    if(!isTag(value)) return;
     _tag = value;
     notifyListeners();
   }
@@ -58,20 +52,15 @@ class Cards with ChangeNotifier {
     return Card(i,_cardScripts[i]);
   }
 
-  void setFilter(String filter) {
-    _filter = filter;
+  void setFilter(String script) {
+    _filter = FilterQuery(script);
     updateDeck();
   }
 
   void updateDeck() {
-    if (_filter.isEmpty) {
-      _deck = List.generate(_cardScripts.length, (i)=>i);
-    } 
-    else {
-      _deck = [];
-      for (var i = 0; i < _cardScripts.length; i++) {
-        if (_cardScripts[i].contains(filter)) _deck.add(i);
-      }
+    _deck = [];
+    for (var i = 0; i < _cardScripts.length; i++) {
+      if (filter.match(_cardScripts[i])) _deck.add(i);
     }
 
     current = findClosestCard(current,_deck);
@@ -161,6 +150,9 @@ class Cards with ChangeNotifier {
   }
 }
 
+bool isTag(String value){
+  return RegExp(r'^#[^ #\n*]+$').hasMatch(value);
+}
 
 String markTag(String tag){
   return '#*${tag.substring(1)}';

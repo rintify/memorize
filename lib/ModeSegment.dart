@@ -22,13 +22,13 @@ class SegmentModeView extends HookWidget {
 
     final segments = useMemoized(() {
       final bookmarkSegments = card.answer.segments
-          .where((s) => s.tags.contains(cards.filter))
+          .where((s) => s.tags.contains(cards.filter.last))
           .toList();
       current.value = 0;
       return bookmarkSegments.isNotEmpty
           ? bookmarkSegments
           : card.answer.segments;
-    }, [cards.filter]);
+    }, [cards.filter.last]);
 
     final currentSegment = atClamp(segments, current.value);
 
@@ -102,6 +102,7 @@ class SegmentModeView extends HookWidget {
         void Function() onLongPress) {
       return GestureDetector(
           onLongPress: onLongPress,
+          onHorizontalDragEnd: (details){onLongPress();},
           onTap: color == null ? null : onLongPress,
           child: color == null ? noqchar(cs, pos) : Stack(
             children: [

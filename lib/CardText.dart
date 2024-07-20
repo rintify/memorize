@@ -62,6 +62,12 @@ class CardText {
         runes.add(rune);
       }
     }
+
+    for(final segment in segments){
+      final t = Set<String>.from(segment.tags);
+      segment.tags.clear();
+      segment.tags.addAll(t);
+    }
   }
 
   String toScript() {

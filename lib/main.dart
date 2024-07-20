@@ -121,9 +121,6 @@ class MainView extends HookWidget {
                         cards.save();
                       });
                       break;
-                    case 4:
-                      cards.cancelMarkedTags();
-                      break;
                   }
                 },
                 itemBuilder: (context) => [
@@ -138,11 +135,7 @@ class MainView extends HookWidget {
                   const PopupMenuItem(
                     value: 3,
                     child: Text("データ編集"),
-                  ),
-                  const PopupMenuItem(
-                    value: 4,
-                    child: Text("無効タグ解除"),
-                  ),
+                  )
                 ],
               ),
               IconButton(
