@@ -1,4 +1,3 @@
-import 'dart:ffi';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' hide Card;
@@ -32,7 +31,7 @@ class TestModeView extends HookWidget {
             },
             icon: Icon(Icons.replay)),
       ],
-      GestureDetector(
+      child: GestureDetector(
         onTap: () {
           open.value = true;
         },

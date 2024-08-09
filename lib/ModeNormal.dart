@@ -22,7 +22,7 @@ class NormalModeView extends HookWidget {
     final cards = Provider.of<Cards>(context);
 
     return CardView(
-      Container(
+      child: Container(
         alignment: Alignment.center,
         child: CardTextView(card.answer,cview: (cs, pos) {
           final segm = cs.findSegment(pos);

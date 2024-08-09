@@ -12,13 +12,17 @@ class CardView extends HookWidget {
   final Widget child;
   final List<IconButton> buttons;
 
-  CardView(this.child, {this.buttons = const []});
+  CardView({required this.child, this.buttons = const []});
 
   @override
   Widget build(BuildContext context) {
     print('card');
     final card = Provider.of<Card>(context);
     final cards = Provider.of<Cards>(context);
+
+    final startPosition = useRef<(Offset,int)?>(null);
+    final size = MediaQuery.of(context).size;
+    final unit = size.width*0.2;
 
     return Column(
       children: [

@@ -3,22 +3,15 @@ import 'package:flutter/material.dart';
 class DropButton extends StatefulWidget {
   final List<DropItem> items;
   final ValueChanged<int?> onSelected;
+  final int selectedItem;
 
-  DropButton({required this.items, required this.onSelected});
+  DropButton({required this.items, required this.onSelected, required this.selectedItem});
 
   @override
   _DropButtonState createState() => _DropButtonState();
 }
 
 class _DropButtonState extends State<DropButton> {
-  int? _selectedItem;
-
-  @override
-  void initState() {
-    super.initState();
-    // 初期選択を設定（必要に応じて変更）
-    _selectedItem = widget.items.isNotEmpty ? widget.items.first.value : null;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,9 +19,8 @@ class _DropButtonState extends State<DropButton> {
       onPressed: () {
         _showPopupMenu(context);
       },
-      child: Text(_selectedItem != null 
-          ? widget.items.firstWhere((item) => item.value == _selectedItem).text 
-          : 'Select an item'),
+      child: Text(
+          widget.items.firstWhere((item) => item.value == widget.selectedItem).text ),
     );
   }
 
@@ -54,9 +46,6 @@ class _DropButtonState extends State<DropButton> {
       }).toList(),
     ).then((value) {
       if (value != null) {
-        setState(() {
-          _selectedItem = value;
-        });
         widget.onSelected(value);
       }
     });

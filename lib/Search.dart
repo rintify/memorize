@@ -36,6 +36,13 @@ class _SearchTextFieldState extends State<SearchTextField> {
             hintText: '検索',
             prefixIcon: GestureDetector(
               onLongPress: () {
+                widget.onSearch(_controller.text); 
+              },
+              onHorizontalDragEnd: (details) {
+                if(details.globalPosition.dx > MediaQuery.of(context).size.width - 30){
+                  _controller.text = '';
+                  return;
+                }
                 int lastSpaceIndex = _controller.text.lastIndexOf(whiteSpace);
                 _controller.text = lastSpaceIndex < 0 ? '' : _controller.text.substring(0, lastSpaceIndex);
                 widget.onSearch(_controller.text); 
@@ -46,7 +53,7 @@ class _SearchTextFieldState extends State<SearchTextField> {
                   _debounce?.cancel();
                   widget.onSearch(_controller.text); 
                 });
-              }, 
+              },
               icon: const Icon(Icons.search)),
             ),
             border: InputBorder.none,

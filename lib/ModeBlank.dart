@@ -6,6 +6,7 @@ import 'package:memorize/ModeNormal.dart';
 import 'package:memorize/CardView.dart';
 import 'package:memorize/Cards.dart';
 import 'package:memorize/CardText.dart';
+import 'package:memorize/ModeSegment.dart';
 import 'package:memorize/card.dart';
 import 'package:memorize/util.dart';
 import 'package:memorize/c.dart';
@@ -20,14 +21,21 @@ class BlankModeView extends HookWidget {
     final card = Provider.of<Card>(context);
     final current = useState<int>(0);
 
-    return CardView(
-      GestureDetector(
-        onTap: () {
-          current.value++;
-        },
-        onLongPress: () {
-          current.value = 0;
-        },
+    return CurrentGestureController(
+      setCurrent: (i) {
+        current.value = clamp(i, 0, card.answer.blanks.length);
+      },
+      getCurrent: () {
+        return current.value;
+      },
+      child: CardView(
+        buttons: [
+          IconButton(onPressed: (){
+            current.value--;
+            if(current.value < 0) current.value = 0;
+          },
+          icon: Icon(Icons.undo)),
+        ],
         child: Container(
           color: Color(0),
           alignment: Alignment.center,
@@ -38,13 +46,6 @@ class BlankModeView extends HookWidget {
           },),
         ),
       ),
-      buttons: [
-        IconButton(onPressed: (){
-          current.value--;
-          if(current.value < 0) current.value = 0;
-        },
-        icon: Icon(Icons.undo)),
-      ],
     );
   }
 }

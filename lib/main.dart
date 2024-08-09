@@ -59,6 +59,7 @@ class MainView extends HookWidget {
     });
 
     final mode = useState(0);
+    final preMode = useRef(0);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -72,32 +73,41 @@ class MainView extends HookWidget {
               SearchTextField(onSearch: (a){
                 cards.setFilter(a);
               }),
-              DropButton(
-                items: [
-                  DropItem(
-                    value: 0,
-                    text: '閲覧',
-                  ),
-                  DropItem(
-                    value: 1,
-                    text: '穴埋め',
-                  ),
-                  DropItem(
-                    value: 2,
-                    text: '暗唱',
-                  ),
-                  DropItem(
-                    value: 3,
-                    text: '模試',
-                  ),
-                  DropItem(
-                    value: 4,
-                    text: '節埋め',
-                  ),
-                ],
-                onSelected: (newValue) {
-                  mode.value = newValue ?? 0;
+              GestureDetector(
+                onHorizontalDragEnd: (details) {
+                  final t = preMode.value;
+                  preMode.value = mode.value;
+                  mode.value = t;
                 },
+                child: DropButton(
+                  selectedItem: mode.value,
+                  items: [
+                    DropItem(
+                      value: 0,
+                      text: '閲覧',
+                    ),
+                    DropItem(
+                      value: 1,
+                      text: '穴埋め',
+                    ),
+                    DropItem(
+                      value: 2,
+                      text: '暗唱',
+                    ),
+                    DropItem(
+                      value: 3,
+                      text: '模試',
+                    ),
+                    DropItem(
+                      value: 4,
+                      text: '節埋め',
+                    ),
+                  ],
+                  onSelected: (newValue) {
+                    preMode.value = mode.value;
+                    mode.value = newValue ?? 0;
+                  },
+                ),
               ),
               PopupMenuButton<int>(
                 icon: const Icon(Icons.cloud_queue),

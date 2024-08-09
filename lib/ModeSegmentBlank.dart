@@ -29,7 +29,20 @@ class SegmentBlankModeView extends HookWidget {
     }, [cards.filter.last]);
 
     return CardView(
-      GestureDetector(
+      buttons: [
+        IconButton(
+            onPressed: () {
+              current.value = 0;
+            },
+            icon: Icon(Icons.replay)),
+        IconButton(
+            onPressed: () {
+              current.value--;
+              if (current.value < 0) current.value = 0;
+            },
+            icon: Icon(Icons.undo))
+      ],
+      child:  GestureDetector(
         onTap: () {
           current.value++;
         },
@@ -72,19 +85,6 @@ class SegmentBlankModeView extends HookWidget {
           ),
         ),
       ),
-      buttons: [
-        IconButton(
-            onPressed: () {
-              current.value = 0;
-            },
-            icon: Icon(Icons.replay)),
-        IconButton(
-            onPressed: () {
-              current.value--;
-              if (current.value < 0) current.value = 0;
-            },
-            icon: Icon(Icons.undo))
-      ],
     );
   }
 }

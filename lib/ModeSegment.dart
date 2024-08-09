@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter/widgets.dart';
@@ -10,6 +12,49 @@ import 'package:memorize/card.dart';
 import 'package:memorize/util.dart';
 import 'package:memorize/c.dart';
 import 'package:provider/provider.dart';
+import 'package:vector_math/vector_math.dart' hide Colors;
+
+class CurrentGestureController extends HookWidget{
+  final Widget child;
+  final void Function(int) setCurrent;
+  final int Function() getCurrent;
+
+  const CurrentGestureController({super.key, required this.child, required this.getCurrent, required this.setCurrent});
+
+  @override
+  Widget build(BuildContext context){
+
+    final startPosition = useRef<(Offset,int)?>(null);
+    final size = MediaQuery.of(context).size;
+    final unit = size.width*0.2;
+
+    return GestureDetector(
+      onTap: () {
+        setCurrent(getCurrent() + 1);
+      },
+      onHorizontalDragStart: (details) {
+        startPosition.value = (details.globalPosition,getCurrent());
+      },
+      onHorizontalDragUpdate: (details) {
+        if(startPosition.value == null) return;
+        
+        final d = Vector2(details.globalPosition.dx - startPosition.value!.$1.dx,
+          details.globalPosition.dy - startPosition.value!.$1.dy);
+        final di = d.x > 0 ? -(d.length/unit).ceil() : (d.length/unit).floor();
+        if(details.globalPosition.dx > size.width*0.93){
+          setCurrent(0);
+          return;
+        }
+        if(details.globalPosition.dx < size.width*0.07){
+          setCurrent(-1 >>> 1);
+          return;
+        }
+        setCurrent(startPosition.value!.$2 + di);
+      },
+      child: child,
+    );
+  }
+}
 
 class SegmentModeView extends HookWidget {
   SegmentModeView();
@@ -32,12 +77,14 @@ class SegmentModeView extends HookWidget {
 
     final currentSegment = atClamp(segments, current.value);
 
-
-    return CardView(
-      GestureDetector(
-        onTap: () {
-          current.value++;
-        },
+    return CurrentGestureController(
+      setCurrent: (i) {
+        current.value = clamp(i, 0, segments.length);
+      },
+      getCurrent: () {
+        return current.value;
+      },
+      child: CardView(
         child: Container(
           color: Color(0),
           alignment: Alignment.center,
@@ -80,19 +127,6 @@ class SegmentModeView extends HookWidget {
           ),
         ),
       ),
-      buttons: [
-        IconButton(
-            onPressed: () {
-              current.value = 0;
-            },
-            icon: Icon(Icons.replay)),
-        IconButton(
-            onPressed: () {
-              current.value--;
-              if (current.value < 0) current.value = 0;
-            },
-            icon: Icon(Icons.undo))
-      ],
     );
   }
 }
@@ -102,7 +136,6 @@ class SegmentModeView extends HookWidget {
         void Function() onLongPress) {
       return GestureDetector(
           onLongPress: onLongPress,
-          onHorizontalDragEnd: (details){onLongPress();},
           onTap: color == null ? null : onLongPress,
           child: color == null ? noqchar(cs, pos) : Stack(
             children: [
