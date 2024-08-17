@@ -40,7 +40,9 @@ class CurrentGestureController extends HookWidget{
         
         final d = Vector2(details.globalPosition.dx - startPosition.value!.$1.dx,
           details.globalPosition.dy - startPosition.value!.$1.dy);
-        final di = d.x > 0 ? -(d.length/unit).ceil() : (d.length/unit).floor();
+        final len = d.length;
+        final fangs = len <= unit ? len : pow((len - unit), 1.2) + unit;
+        final di = d.x > 0 ? -(fangs/unit).ceil() : (fangs/unit).floor();
         if(details.globalPosition.dx > size.width*0.93){
           setCurrent(0);
           return;
