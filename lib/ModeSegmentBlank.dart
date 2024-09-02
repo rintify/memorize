@@ -6,6 +6,7 @@ import 'package:memorize/ModeNormal.dart';
 import 'package:memorize/CardView.dart';
 import 'package:memorize/Cards.dart';
 import 'package:memorize/CardText.dart';
+import 'package:memorize/ModeSegment.dart';
 import 'package:memorize/card.dart';
 import 'package:memorize/util.dart';
 import 'package:memorize/c.dart';
@@ -25,28 +26,22 @@ class SegmentBlankModeView extends HookWidget {
           .where((s) => s.tags.contains(cards.filter.last))
           .toList();
       current.value = 0;
-      return bookmarkSegments;
+      return List<Segment>.from(bookmarkSegments.isNotEmpty
+          ? bookmarkSegments
+          : card.answer.segments)..sort((a,b) => a.id.compareTo(b.id));
     }, [cards.filter.last]);
 
-    return CardView(
-      buttons: [
-        IconButton(
-            onPressed: () {
-              current.value = 0;
-            },
-            icon: Icon(Icons.replay)),
-        IconButton(
-            onPressed: () {
-              current.value--;
-              if (current.value < 0) current.value = 0;
-            },
-            icon: Icon(Icons.undo))
-      ],
-      child:  GestureDetector(
-        onTap: () {
-          current.value++;
-        },
-        child: Container(
+    return CurrentGestureController(
+      setCurrent: (i) {
+        current.value = clamp(i, 0, segments.length);
+      },
+      getCurrent: () {
+        return current.value;
+      },
+      child: CardView(
+        buttons: [
+        ],
+        child:  Container(
           color: Color(0),
           alignment: Alignment.center,
           child: CardTextView(
@@ -54,7 +49,7 @@ class SegmentBlankModeView extends HookWidget {
             end: true,
             cview: (cs, pos) {
                 final segm = cs.findSegment(pos);
-                final ids = current.value < segments.length ?  segments[current.value].id : 0xffffffff;
+                final ids = current.value < segments.length ? segments[current.value].id : 0xffffffff;
                 if(segm.id >= ids && segments.contains(segm)) return character('？'.codeUnitAt(0), qstyle);
                 if (segm.tags.contains(cards.tag)) {
                   return CView(cs, pos, segm, Colors.amber.withAlpha(200), () {

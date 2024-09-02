@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
@@ -72,12 +73,14 @@ class SegmentModeView extends HookWidget {
           .where((s) => s.tags.contains(cards.filter.last))
           .toList();
       current.value = 0;
-      return bookmarkSegments.isNotEmpty
+      return List<Segment>.from(bookmarkSegments.isNotEmpty
           ? bookmarkSegments
-          : card.answer.segments;
+          : card.answer.segments)..sort((a,b) => a.id.compareTo(b.id));
     }, [cards.filter.last]);
 
     final currentSegment = atClamp(segments, current.value);
+
+    print('${segments.length} ${segments.map((s)=>'${s.id},${s.start}').join(' ')}');
 
     return CurrentGestureController(
       setCurrent: (i) {
@@ -94,11 +97,9 @@ class SegmentModeView extends HookWidget {
             card.answer,
             end: true,
             cview: (cs, pos) {
-              final seg = current.value >= segments.length
-                  ? 0xffffffffff
-                  : currentSegment.start;
-              if (pos < seg) {
-                final segm = cs.findSegment(pos);
+              final segm = cs.findSegment(pos);
+              final ids = current.value < segments.length ? segments[current.value].id : 0xffffffff;
+              if (segm.id < ids) {
                 if (segm.tags.contains(cards.tag)) {
                   return CView(cs, pos, segm, Colors.amber.withAlpha(200), () {
                     segm.tags.remove(cards.tag);

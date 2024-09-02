@@ -12,7 +12,7 @@ RunesBuffer codeNumber(String str) {
   int lastMatchEnd = 0;
 
   Iterable<Match> matches = regExp.allMatches(str);
-
+  
   for (Match match in matches) {
     runes.addAll(str.substring(lastMatchEnd, match.start).runes);
     int number = int.parse(match.group(1)!);
@@ -77,8 +77,9 @@ T? find<T>(Iterable<T> list, bool Function(T v) f) {
 class Segment {
   int id;
   int start;
+  int shift;
   final List<String> tags = [];
-  Segment(this.id, this.start);
+  Segment(this.id, this.start,{this.shift = 0});
 }
 
 class Range {
@@ -97,22 +98,33 @@ class Blank extends Range {
 
 class Hurigana extends Range {
   String text;
+  bool question;
 
-  Hurigana({this.text = '', int start = 0, int end = 0})
+  Hurigana({this.text = '', int start = 0, int end = 0, this.question = false})
       : super(start: start, end: end);
 }
 
-const double fontSize = 20;
+const double fontSize = 17;
 const TextStyle style =
-    TextStyle(fontSize: fontSize, height: 1.1, fontFamily: 'Serif');
+    TextStyle(fontSize: fontSize, color: Colors.black, height: 1, fontFamily: 'Sex');
 const TextStyle qstyle = TextStyle(
-    fontSize: fontSize, height: 1.1, color: Colors.red, fontFamily: 'Serif');
+    fontSize: fontSize, color: Colors.red, height: 1, fontFamily: 'Sex');
 const TextStyle hstyle =
-    TextStyle(fontSize: fontSize * 0.4, height: 1.1, fontFamily: 'Serif');
+    TextStyle(fontSize: fontSize * 0.4, height: 1, fontFamily: 'Sex');
 final space = (style.fontSize ?? 0) * 0.4;
+
+final textPainter = TextPainter(
+  text: const TextSpan(
+  text: 'あ',
+  style: style,
+),
+textDirection: TextDirection.ltr);
+
+final fontoRatio = (textPainter..layout()).height/fontSize;
 
 Widget CardTextView(CardText cs,
     {Widget Function(CardText cs, int pos) cview = noqchar, bool end = false}) {
+
   final List<Range> viewLines = [];
   int lineI = 0;
   int pos = cs.lines[lineI];
@@ -151,13 +163,15 @@ Widget CardTextView(CardText cs,
 Widget noqchar(CardText cs, int pos) {
   final hurigana = find(cs.huriganas, (h) => h.start == pos);
   final char = cs.runes[pos];
-  if (hurigana == null) {
-    return character(char, style);
-  } else {
-    return Stack(
+  final isMarked = cs.marks.contains(pos);
+
+  Widget charWidget = character(char, style);
+
+  if (hurigana != null) {
+    charWidget = Stack(
       clipBehavior: Clip.none,
       children: [
-        character(char, style),
+        charWidget,
         Positioned(
           // ここでポップアップの位置を調整
           right: -(hstyle.fontSize ?? 0) - 1,
@@ -174,22 +188,68 @@ Widget noqchar(CardText cs, int pos) {
       ],
     );
   }
+
+  if (isMarked) {
+    charWidget = Container(
+      decoration: BoxDecoration(
+        color: Colors.pink.withOpacity(0.1), // ハイライトの色を選択
+        shape: BoxShape.circle, // これで円形にする
+      ),
+      child: Center(child: charWidget), // 子ウィジェットを中央に配置
+    );
+  }
+
+
+  return charWidget;
 }
 
+
 Widget character(int rune, TextStyle style) {
+  final fontSize = style.fontSize??1;
+  final h = fontSize*1.03, w = space*2 + fontSize;
+
   if (rune >= EXTRA_FIRST_CODE) {
-    return Text('(${rune - EXTRA_FIRST_CODE})', style: style);
+    return Container(
+      alignment: Alignment.center,
+      height: h,
+      width: w,
+      child: Text('(${rune - EXTRA_FIRST_CODE})', style: style));
   }
 
   final char = String.fromCharCode(rune);
 
+  if(char == '─'){
+    return Container(
+      alignment: Alignment.center,
+      width: w,
+      child: Container(
+              width: 1, // 太さ1px
+              height: h,
+              color: style.color, // 線の色
+            ),
+    );
+  }
+
+  if(char == '│'){
+    return Container(
+      alignment: Alignment.center,
+      height: h,
+      child: Container(
+              width: w, // 太さ1px
+              height: 1,
+              color: style.color, // 線の色
+            ),
+    );
+  }
+
   return Container(
+    height: h,
+    width: w,
+    alignment: Alignment.center,
     color: const Color(0x00000000),
-    child: Padding(
-        padding: EdgeInsets.fromLTRB(space, 0, space, 0),
-        child: VerticalRotated.map[char] != null
-            ? Text(VerticalRotated.map[char]!, style: style)
-            : Text(char, style: style)),
+    child: VerticalRotated.map[char] != null
+        ? Text(VerticalRotated.map[char]!, style: style)
+        : Text(char, style: style, textScaler: TextScaler.noScaling,),
   );
 }
 

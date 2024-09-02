@@ -1,4 +1,5 @@
-  import 'dart:ui';
+  import 'dart:math';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -65,24 +66,11 @@ bool isInteger(num? value) {
 
 final whiteSpace = RegExp('[ 　\n]+');
 
-class FilterQuery{
-  late List<String> _andWords;
-  late String _last;
-
-  get last => _last;
-
-  FilterQuery(String script){
-    _andWords = script.trim().split(whiteSpace);
-    _last = _andWords.isEmpty ? '' : _andWords.last;
+int parseInt(String str,[int ex = 0]){
+  try{
+    return int.parse(str);
   }
-
-  bool match(String str) {
-    for (String word in _andWords) {
-      if (!str.contains(word)) {
-        return false;
-      }
-    }
-    return true;
+  catch(e){
+    return ex;
   }
-  
 }

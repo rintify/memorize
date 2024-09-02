@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart' show ChangeNotifier;
 import 'package:memorize/TagPicker.dart';
+import 'package:memorize/parser.dart';
 import 'package:memorize/util.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
@@ -58,10 +59,7 @@ class Cards with ChangeNotifier {
   }
 
   void updateDeck() {
-    _deck = [];
-    for (var i = 0; i < _cardScripts.length; i++) {
-      if (filter.match(_cardScripts[i])) _deck.add(i);
-    }
+    _deck = filter.execute((i) => _cardScripts[i], _cardScripts.length);
 
     current = findClosestCard(current,_deck);
 
@@ -78,6 +76,13 @@ class Cards with ChangeNotifier {
 
   String getScripts() {
     return _cardScripts.join('\n###\n');
+  }
+
+  void editDeckScript(String Function(String script) edit, {bool applyAll = false}){
+    for (var i in applyAll ? List.generate(_cardScripts.length, (i) => i) : deck) {
+      _cardScripts[i] = edit(_cardScripts[i]);
+    }
+    notifyListeners();
   }
 
   Future<void> save() async {

@@ -36,6 +36,8 @@ dependencies:
   http: ^1.2.1
   encrypt: ^5.0.3
   vector_math: ^2.1.4
+  petitparser: ^6.0.2
+  flutter_js: ^0.8.1
   
 
 flutter_icons:
@@ -70,7 +72,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   fonts:
-  - family: Serif
+  - family: Sex
     fonts:
       - asset: assets/SourceHanSerif-Heavy.ttc
 
