@@ -23,6 +23,8 @@ class Cards with ChangeNotifier {
 
   String get tag => _tag;
 
+  List<String> filterHistory = [];
+
   void setTag(String value) {
     if(!isTag(value)) return;
     _tag = value;
@@ -54,8 +56,17 @@ class Cards with ChangeNotifier {
   }
 
   void setFilter(String script) {
+    script = script.trim();
     _filter = FilterQuery(script);
     updateDeck();
+
+    if(_deck.isEmpty || script.isEmpty) return;
+
+    filterHistory.remove(script);
+
+    filterHistory.add(script);
+    
+    if(filterHistory.length > 10) filterHistory.removeRange(0,filterHistory.length - 10);
   }
 
   void updateDeck() {

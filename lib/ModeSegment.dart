@@ -73,7 +73,7 @@ class SegmentModeView extends HookWidget {
           .where((s) => s.tags.contains(cards.filter.last))
           .toList();
       current.value = 0;
-      return List<Segment>.from(bookmarkSegments.isNotEmpty
+      return List<Segment>.from(bookmarkSegments.isNotEmpty && !card.tags.contains(cards.filter.last)
           ? bookmarkSegments
           : card.answer.segments)..sort((a,b) => a.id.compareTo(b.id));
     }, [cards.filter.last]);
@@ -95,7 +95,7 @@ class SegmentModeView extends HookWidget {
           alignment: Alignment.center,
           child: CardTextView(
             card.answer,
-            end: true,
+            end: false,
             cview: (cs, pos) {
               final segm = cs.findSegment(pos);
               final ids = current.value < segments.length ? segments[current.value].id : 0xffffffff;

@@ -1,4 +1,5 @@
 
+import 'package:memorize/CardTextParser.dart';
 import 'package:memorize/util.dart';
 import 'package:petitparser/core.dart';
 import 'package:petitparser/petitparser.dart';
@@ -54,7 +55,16 @@ class FilterQuery {
   String get last => _last;
 
   FilterQuery(String script) {
-    final def = EvaluatorDefinition()..execute('A $script');
+    /*final a = CardEvaluator();
+    try{
+      final F = a.build().parse('ab').value;
+    }
+    catch(e){
+      print(e);
+    }*/
+
+
+    final def = EvaluatorDefinition()..execute('(((A $script');
     _filter = def.filter;
     print(_filter('あいうえお'));
     _sort = def.sort;
@@ -79,14 +89,8 @@ class FilterQuery {
 class ExpressionDefinition extends GrammarDefinition {
   @override
   Parser start() => ref0(add).optional().end();
-
-  // addX ルールを左再帰に変更
   Parser add() => ref0(mul) & (pattern(r'+\-').trim() & ref0(mul)).star();
-
-  // mulX ルールを左再帰に変更
   Parser mul() => ref0(varr).plus();
-
-  // 残りのルールはそのまま
   Parser varr() => ref0(parens) | ref0(any) | ref0(shuffle) | ref0(str);
   Parser shuffle() => string('S').seq(ref0(() => digit().plus().flatten()));
   Parser parens() => char('(').trim() & ref0(add).optional() & char(')').trim().optional();
@@ -94,23 +98,10 @@ class ExpressionDefinition extends GrammarDefinition {
   Parser str() => pattern(r'^ \n()+\-').plus().flatten().trim();
 }
 
-
 class EvaluatorDefinition extends ExpressionDefinition {
-  String last = '';
-  bool Function(String) filter = (arg) => false;
-  SortStrategy sort = CounterSortStrategy();
-
-  execute(String input){
-    try{
-      final F = build().parse(input).value;
-      filter = (arg) => F(arg) as bool;
-    }
-    catch(e){
-      print(e);
-    }
-  }
 
   Parser start() => super.start().map((values) => values ?? (arg) => false);
+
   Parser add() => super.add().map((values){
     var f = (arg) => values[0](arg);
     for(var i = 0; i < values[1].length; i ++){
@@ -121,6 +112,7 @@ class EvaluatorDefinition extends ExpressionDefinition {
     }
     return f;
   });
+
   Parser mul() => super.mul().map((values){
     var f = (arg) => values[0](arg);
     for(var i = 1; i < values.length; i ++){
@@ -140,4 +132,18 @@ class EvaluatorDefinition extends ExpressionDefinition {
     sort = RandomSortStrategy(seed);
     return (arg) => true;
   });
+
+  String last = '';
+  bool Function(String) filter = (arg) => false;
+  SortStrategy sort = CounterSortStrategy();
+
+  execute(String input){
+    try{
+      final F = build().parse(input).value;
+      filter = (arg) => F(arg) as bool;
+    }
+    catch(e){
+      print(e);
+    }
+  }
 }

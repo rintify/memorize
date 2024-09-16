@@ -6,56 +6,73 @@ import 'package:memorize/editText.dart';
 import 'package:memorize/main.dart';
 import 'package:memorize/ModeNormal.dart';
 
+class TagWidget extends StatelessWidget {
+  final Function(String) onResult;
+
+  TagWidget({required this.onResult});
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = Provider.of<Cards>(context);
+    final tags = extractHashTags(cards.cardScripts).toList();
+    tags.sort();
+    tags.add('__add_new__'); // 特別なアイテムを追加
+
+    return Wrap(
+      spacing: 2.0,
+      alignment: WrapAlignment.start, // 必要に応じて中央寄せなどに変更可能
+      children: tags.map((tag) {
+        return GestureDetector(
+          onTap: () {
+            if (tag == '__add_new__') {
+              editText(context, '#', (t) {
+                onResult(t);
+              });
+            } else {
+              onResult(tag);
+            }
+          },
+          onLongPress: tag == '__add_new__' ? null : () => showTagEditorMenu(context, tag),
+          child: Chip(
+            label: Text(tag == '__add_new__' ? '+ 新しいタグを追加' : tag),
+            padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 2.0),
+            shape: StadiumBorder(
+              side: BorderSide(
+                color: Colors.black.withOpacity(0.2), // 枠に透明度を持たせる
+                width: 1.0,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+
 void showTagPicker(BuildContext context, Function(String tag) onResult) {
   showModalBottomSheet(
     context: context,
     builder: (BuildContext context) {
-      final cards = Provider.of<Cards>(context);
-      final tags = extractHashTags(cards.cardScripts).toList();
-      tags.sort();
-      tags.add('__add_new__'); // 特別なアイテムを追加
-
-      return Container(
+      
+      return SizedBox(
         height: 300,
-        child: Container(
-          child: ListView.builder(
-            itemCount: tags.length,
-            itemBuilder: (context, index) {
-              if (tags[index] == '__add_new__') {
-                return Container(
-                  height: 50.0, // ListTileの高さを固定
-                  child: ListTile(
-                    title: Text('+ 新しいタグを追加'),
-                    onTap: () {
-                      editText(context, '#', (t) {
-                        onResult(t);
-                        Navigator.pop(context);
-                      });
-                    },
-                  ),
-                );
-              } else {
-                return Container(
-                  height: 50.0, // ListTileの高さを固定
-                  child: ListTile(
-                    title: Text(tags[index]),
-                    onTap: () {
-                      onResult(tags[index]);
-                      Navigator.pop(context);
-                    },
-                    onLongPress: () {
-                      showTagEditorMenu(context, tags[index]);
-                    },
-                  ),
-                );
-              }
-            },
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10,20,10,0),
+            child: TagWidget(onResult: (result){
+              onResult(result); 
+              Navigator.pop(context);
+            })
           ),
         ),
       );
     },
   );
 }
+
+
+
 
 final RegExp regExp = RegExp(r'#[^# \n]+');
 final RegExp regExpx = RegExp(r'^#[^# \n]+$');
@@ -123,11 +140,25 @@ void showTagEditorMenu(BuildContext context, String tag) {
                     cards.editDeckScript(applyAll: _isSwitched, (script){
                       final tagname = tag.substring(1), copyTagname = 'コピー$tagname';
                       script = script.replaceAllMapped(RegExp('#\\*?$tagname'), (match) {
-                        return match[0]!.startsWith('#*') ? '#*$copyTagname' : '#$copyTagname';
+                        return match[0]!.startsWith('#*') ? '#*$copyTagname #*$tagname' : '#$copyTagname #$tagname';
                       });
                       return script.replaceAll(tag, '$copyTagname $tag');
                     });
                     Navigator.of(context).pop();
+                  },
+                ),
+                ListTile(
+                  title: Text('一括付与'),
+                  onTap: () {
+                    confirmDialog(context, '本当に $tag を一括付与しますか？', () {
+                      cards.editDeckScript(applyAll: _isSwitched, (script){
+                        final a = script.split('\n##\n');
+                        final blocks = List.generate(3,(i) => i < a.length ? a[i] : '');
+                        blocks[2] += ' $tag';
+                        return blocks.join('\n##\n');
+                      });
+                      Navigator.of(context).pop();
+                    });
                   },
                 ),
                 ListTile(
@@ -157,7 +188,7 @@ void showTagEditorMenu(BuildContext context, String tag) {
     ),
     SizedBox(width: 8), // SwitchとTextの間にスペースを追加（必要に応じて調整）
     Text(
-      'すべてに適用',
+      'フィルター外に適用',
     ),
   ],
 )
