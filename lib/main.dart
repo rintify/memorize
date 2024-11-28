@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:memorize/CardTextParser.dart';
 import 'package:memorize/ModeBlank.dart';
 import 'package:memorize/ModeSegment.dart';
 import 'package:memorize/ModeSegmentBlank.dart';
@@ -16,6 +17,11 @@ import 'package:memorize/editText.dart';
 import 'package:memorize/ModeNormal.dart';
 
 void main() async {
+  final a = CardGrammarDefinition();
+  final F = a.build().parse("#efa #r a 天童{abc}bc/abva/fafasf").value;
+  print(F);
+
+
   WidgetsFlutterBinding.ensureInitialized();
 
   final cards = Cards();
