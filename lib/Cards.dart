@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'card.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class Cards with ChangeNotifier {
   List<String> _cardScripts = [''];
@@ -41,7 +42,7 @@ class Cards with ChangeNotifier {
 
   void setCurrent(int card, [bool notify = true]){
     current = card;
-    if(notify) notifyListeners();
+    /*if(notify) */notifyListeners();
   }
 
   void setCard(int i, Card card, [bool notify = true]){
@@ -110,13 +111,18 @@ class Cards with ChangeNotifier {
       setScripts(read);
       setTag(extractHashTags(_cardScripts).first);
     } catch (e) {
-      print("Error reading file: $e");
+      try{
+      final defaultContent = await rootBundle.loadString('assets/data.txt');
+      setScripts(defaultContent);
+      }catch(e){
+        print("Error reading file: $e");
+      }
     }
   }
 
   Future<bool> download() async {
     try {
-      final response = await http.get(Uri.parse('https://ri-n.com/fetch.php'));
+      final response = await http.get(Uri.parse('https://rintify.sakura.ne.jp/wg0t394hgoihj3oghwoihioh2/fetch.php'));
 
       print(response.statusCode);
       if (response.statusCode != 200) return false;
@@ -138,7 +144,7 @@ class Cards with ChangeNotifier {
       final encryptedData = encryptData(getScripts());
       print('Sending encrypted data...');
       final response = await http.post(
-        Uri.parse('https://ri-n.com/send.php'),
+        Uri.parse('https://rintify.sakura.ne.jp/wg0t394hgoihj3oghwoihioh2/send.php'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },

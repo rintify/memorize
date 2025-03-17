@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:memorize/CardTextParser.dart';
 import 'package:memorize/ModeBlank.dart';
 import 'package:memorize/ModeSegment.dart';
 import 'package:memorize/ModeSegmentBlank.dart';
@@ -15,17 +15,16 @@ import 'package:provider/provider.dart';
 import 'package:memorize/Cards.dart';
 import 'package:memorize/editText.dart';
 import 'package:memorize/ModeNormal.dart';
+import 'package:flutter/services.dart' show rootBundle;
+
+String setumei = '';
 
 void main() async {
-  final a = CardGrammarDefinition();
-  final F = a.build().parse("#efa #r a 天童{abc}bc/abva/fafasf").value;
-  print(F);
-
-
   WidgetsFlutterBinding.ensureInitialized();
 
   final cards = Cards();
   await cards.load();
+  setumei = await rootBundle.loadString('assets/help.txt');
 
   runApp(
     ChangeNotifierProvider(
@@ -115,6 +114,12 @@ class MainView extends HookWidget {
                   },
                 ),
               ),
+              IconButton(
+                icon: const Icon(Icons.info_outline),
+                onPressed: () {
+                  editText(context,setumei,(result){});
+                },
+              ),
               PopupMenuButton<int>(
                 icon: const Icon(Icons.cloud_queue),
                 onSelected: (value) {
@@ -195,7 +200,16 @@ class MainView extends HookWidget {
                   : NormalModeView(),
                     
             );
-          }),
+          }
+        ),
+        bottomNavigationBar: SizedBox(
+          height: 3,
+          child: Align(
+            alignment: AlignmentDirectional.bottomStart,
+            child: Container(color: Colors.blue, height:  3, 
+              width: clampDouble(cards.deck.indexOf(cards.current)/cards.deck.length, 0, 1)*MediaQuery.of(context).size.width,),
+          ),
+        ),
     );
   }
 }

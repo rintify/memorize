@@ -1,5 +1,4 @@
 
-import 'package:memorize/CardTextParser.dart';
 import 'package:memorize/util.dart';
 import 'package:petitparser/core.dart';
 import 'package:petitparser/petitparser.dart';
