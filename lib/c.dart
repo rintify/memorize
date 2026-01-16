@@ -12,7 +12,7 @@ RunesBuffer codeNumber(String str) {
   int lastMatchEnd = 0;
 
   Iterable<Match> matches = regExp.allMatches(str);
-  
+
   for (Match match in matches) {
     runes.addAll(str.substring(lastMatchEnd, match.start).runes);
     int number = int.parse(match.group(1)!);
@@ -79,7 +79,7 @@ class Segment {
   int start;
   int shift;
   final List<String> tags = [];
-  Segment(this.id, this.start,{this.shift = 0});
+  Segment(this.id, this.start, {this.shift = 0});
 }
 
 class Range {
@@ -105,8 +105,8 @@ class Hurigana extends Range {
 }
 
 const double fontSize = 17;
-const TextStyle style =
-    TextStyle(fontSize: fontSize, color: Colors.black, height: 1, fontFamily: 'Sex');
+const TextStyle style = TextStyle(
+    fontSize: fontSize, color: Colors.black, height: 1, fontFamily: 'Sex');
 const TextStyle qstyle = TextStyle(
     fontSize: fontSize, color: Colors.red, height: 1, fontFamily: 'Sex');
 const TextStyle hstyle =
@@ -114,21 +114,24 @@ const TextStyle hstyle =
 final space = (style.fontSize ?? 0) * 0.4;
 
 final textPainter = TextPainter(
-  text: const TextSpan(
-  text: 'あ',
-  style: style,
-),
-textDirection: TextDirection.ltr);
+    text: const TextSpan(
+      text: 'あ',
+      style: style,
+    ),
+    textDirection: TextDirection.ltr);
 
-final fontoRatio = (textPainter..layout()).height/fontSize;
+final fontoRatio = (textPainter..layout()).height / fontSize;
 
 Widget CardTextView(CardText cs,
-    {Widget Function(CardText cs, int pos) cview = noqchar, bool end = false}) {
-
+    {Widget Function(CardText cs, int pos) cview = noqchar,
+    bool end = false,
+    int? maxLines}) {
   final List<Range> viewLines = [];
   int lineI = 0;
   int pos = cs.lines[lineI];
+  var loopCount = 0;
   for (;;) {
+    if (maxLines != null && loopCount >= maxLines) break;
     final int end =
         lineI + 1 == cs.lines.length ? cs.runes.length : cs.lines[lineI + 1];
     final pre = pos;
@@ -138,6 +141,7 @@ Widget CardTextView(CardText cs,
       lineI++;
     }
     viewLines.add(Range(start: pre, end: pos));
+    loopCount++;
     if (lineI >= cs.lines.length) break;
   }
 
@@ -153,7 +157,13 @@ Widget CardTextView(CardText cs,
           children: [
             for (var i = viewLines[j].start; i < viewLines[j].end; i++)
               cview(cs, i),
-            ...(end && j == viewLines.length - 1 ? [const Text('﹂',style: TextStyle(fontSize: 20,color: Colors.blueAccent))] : [])
+            ...(end && j == viewLines.length - 1
+                ? [
+                    const Text('﹂',
+                        style:
+                            TextStyle(fontSize: 20, color: Colors.blueAccent))
+                  ]
+                : [])
           ],
         ),
     ],
@@ -199,46 +209,44 @@ Widget noqchar(CardText cs, int pos) {
     );
   }
 
-
   return charWidget;
 }
 
-
 Widget character(int rune, TextStyle style) {
-  final fontSize = style.fontSize??1;
-  final h = fontSize*1.03, w = space*2 + fontSize;
+  final fontSize = style.fontSize ?? 1;
+  final h = fontSize * 1.03, w = space * 2 + fontSize;
 
   if (rune >= EXTRA_FIRST_CODE) {
     return Container(
-      alignment: Alignment.center,
-      height: h,
-      width: w,
-      child: Text('(${rune - EXTRA_FIRST_CODE})', style: style));
+        alignment: Alignment.center,
+        height: h,
+        width: w,
+        child: Text('(${rune - EXTRA_FIRST_CODE})', style: style));
   }
 
   final char = String.fromCharCode(rune);
 
-  if(char == '─'){
+  if (char == '─') {
     return Container(
       alignment: Alignment.center,
       width: w,
       child: Container(
-              width: 1, // 太さ1px
-              height: h,
-              color: style.color, // 線の色
-            ),
+        width: 1, // 太さ1px
+        height: h,
+        color: style.color, // 線の色
+      ),
     );
   }
 
-  if(char == '│'){
+  if (char == '│') {
     return Container(
       alignment: Alignment.center,
       height: h,
       child: Container(
-              width: w, // 太さ1px
-              height: 1,
-              color: style.color, // 線の色
-            ),
+        width: w, // 太さ1px
+        height: 1,
+        color: style.color, // 線の色
+      ),
     );
   }
 
@@ -249,7 +257,11 @@ Widget character(int rune, TextStyle style) {
     color: const Color(0x00000000),
     child: VerticalRotated.map[char] != null
         ? Text(VerticalRotated.map[char]!, style: style)
-        : Text(char, style: style, textScaler: TextScaler.noScaling,),
+        : Text(
+            char,
+            style: style,
+            textScaler: TextScaler.noScaling,
+          ),
   );
 }
 

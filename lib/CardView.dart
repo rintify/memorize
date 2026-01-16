@@ -34,7 +34,19 @@ class CardView extends HookWidget {
                     children: [
                       Container(
                         alignment: Alignment.topCenter,
-                        child: CardTextView(card.question),
+                        child: GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return Dialog(
+                                        child: Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: CardTextView(card.question),
+                                    ));
+                                  });
+                            },
+                            child: CardTextView(card.question, maxLines: 1)),
                       ),
                       IconButton(
                           onPressed: () {
@@ -87,7 +99,8 @@ class CardView extends HookWidget {
                   showTagEditorMenu(context, cards.tag);
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   color: const Color(0x00000000),
                   child: Text(
                     cards.tag,
