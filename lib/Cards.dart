@@ -1,6 +1,7 @@
-
 import 'dart:collection';
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart' show ChangeNotifier;
 import 'package:memorize/TagPicker.dart';
@@ -27,33 +28,33 @@ class Cards with ChangeNotifier {
   List<String> filterHistory = [];
 
   void setTag(String value) {
-    if(!isTag(value)) return;
+    if (!isTag(value)) return;
     _tag = value;
     notifyListeners();
   }
 
-  UnmodifiableListView<int> get deck{
+  UnmodifiableListView<int> get deck {
     return UnmodifiableListView(_deck);
   }
 
-  UnmodifiableListView<String> get cardScripts{
+  UnmodifiableListView<String> get cardScripts {
     return UnmodifiableListView(_cardScripts);
   }
 
-  void setCurrent(int card, [bool notify = true]){
+  void setCurrent(int card, [bool notify = true]) {
     current = card;
-    /*if(notify) */notifyListeners();
+    /*if(notify) */ notifyListeners();
   }
 
-  void setCard(int i, Card card, [bool notify = true]){
-    if(i < 0 || i >= _cardScripts.length) return;
+  void setCard(int i, Card card, [bool notify = true]) {
+    if (i < 0 || i >= _cardScripts.length) return;
     _cardScripts[i] = card.getScript();
-    if(notify) updateDeck();
+    if (notify) updateDeck();
   }
 
-  Card? getCard(int i){
-    if(i < 0 || i >= _cardScripts.length) return null;
-    return Card(i,_cardScripts[i]);
+  Card? getCard(int i) {
+    if (i < 0 || i >= _cardScripts.length) return null;
+    return Card(i, _cardScripts[i]);
   }
 
   void setFilter(String script) {
@@ -61,25 +62,25 @@ class Cards with ChangeNotifier {
     _filter = FilterQuery(script);
     updateDeck();
 
-    if(_deck.isEmpty || script.isEmpty) return;
+    if (_deck.isEmpty || script.isEmpty) return;
 
     filterHistory.remove(script);
 
     filterHistory.add(script);
-    
-    if(filterHistory.length > 10) filterHistory.removeRange(0,filterHistory.length - 10);
+
+    if (filterHistory.length > 10)
+      filterHistory.removeRange(0, filterHistory.length - 10);
   }
 
   void updateDeck() {
     _deck = filter.execute((i) => _cardScripts[i], _cardScripts.length);
 
-    current = findClosestCard(current,_deck);
+    current = findClosestCard(current, _deck);
 
     notifyListeners();
   }
 
   void setScripts(String script) {
-
     _cardScripts = script.split('\n###\n');
     updateDeck();
 
@@ -90,46 +91,128 @@ class Cards with ChangeNotifier {
     return _cardScripts.join('\n###\n');
   }
 
-  void editDeckScript(String Function(String script) edit, {bool applyAll = false}){
-    for (var i in applyAll ? List.generate(_cardScripts.length, (i) => i) : deck) {
+  void editDeckScript(String Function(String script) edit,
+      {bool applyAll = false}) {
+    for (var i
+        in applyAll ? List.generate(_cardScripts.length, (i) => i) : deck) {
       _cardScripts[i] = edit(_cardScripts[i]);
     }
     notifyListeners();
   }
 
   Future<void> save() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/data.txt');
-    await file.writeAsString(getScripts());
+    try {
+      // Save to SharedPreferences (Works on both Web and Mobile)
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('card_data', getScripts());
+
+      // Save to File (Mobile/Desktop only)
+      if (!kIsWeb) {
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/data.txt');
+        await file.writeAsString(getScripts());
+      }
+    } catch (e) {
+      print("Error saving data: $e");
+    }
   }
 
   Future<void> load() async {
+    await loadSettings();
+    bool loaded = false;
+
+    // Load from SharedPreferences
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/data.txt');
-      final read = await file.readAsString();
-      setScripts(read);
-      setTag(extractHashTags(_cardScripts).first);
-    } catch (e) {
-      try{
-      final defaultContent = await rootBundle.loadString('assets/data.txt');
-      setScripts(defaultContent);
-      }catch(e){
-        print("Error reading file: $e");
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.containsKey('card_data')) {
+        final savedData = prefs.getString('card_data');
+        if (savedData != null && savedData.isNotEmpty) {
+          setScripts(savedData);
+          setTag(extractHashTags(_cardScripts).first);
+          loaded = true;
+        }
       }
+    } catch (e) {
+      print("Error loading from SharedPreferences: $e");
+    }
+
+    // Load from File (Mobile/Desktop only) - Only if not already loaded (or as priority override?)
+    // Strategy: If on mobile, maybe file is source of truth?
+    // Let's assume SharedPreferences is the new primary for consistency, but if missing, try file.
+    if (!loaded && !kIsWeb) {
+      try {
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/data.txt');
+        if (await file.exists()) {
+          final read = await file.readAsString();
+          setScripts(read);
+          setTag(extractHashTags(_cardScripts).first);
+          loaded = true;
+        }
+      } catch (e) {
+        print("Error loading from file: $e");
+      }
+    }
+
+    if (!loaded) {
+      try {
+        final defaultContent = await rootBundle.loadString('assets/data.txt');
+        setScripts(defaultContent);
+      } catch (e) {
+        print("Error reading default file: $e");
+      }
+    }
+  }
+
+  String _url = 'https://rintify.sakura.ne.jp/wg0t394hgoihj3oghwoihioh2/';
+  String _password = 'wvLb5bkBkDgK2UfTXYhAtHEJyNqtaZUf';
+
+  String get url => _url;
+  String get password => _password;
+
+  Future<void> saveSettings(String newUrl, String newPassword) async {
+    _url = newUrl;
+    if (!_url.endsWith('/')) {
+      _url += '/';
+    }
+    _password = newPassword;
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('cloud_url', _url);
+      await prefs.setString('cloud_password', _password);
+    } catch (e) {
+      print("Error saving settings: $e");
+    }
+  }
+
+  Future<void> loadSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _url = prefs.getString('cloud_url') ?? _url;
+      _password = prefs.getString('cloud_password') ?? _password;
+    } catch (e) {
+      print("Error loading settings: $e");
     }
   }
 
   Future<bool> download() async {
     try {
-      final response = await http.get(Uri.parse('https://rintify.sakura.ne.jp/wg0t394hgoihj3oghwoihioh2/fetch.php'));
+      final response = await http.post(
+        Uri.parse('${_url}fetch.php'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode({
+          'password': _password,
+        }),
+      );
 
       print(response.statusCode);
       if (response.statusCode != 200) return false;
 
-      print(response.body);
       final script = decryptData(response.body);
-      print(script);
       setScripts(script);
 
       return true;
@@ -144,24 +227,23 @@ class Cards with ChangeNotifier {
       final encryptedData = encryptData(getScripts());
       print('Sending encrypted data...');
       final response = await http.post(
-        Uri.parse('https://rintify.sakura.ne.jp/wg0t394hgoihj3oghwoihioh2/send.php'),
+        Uri.parse('${_url}send.php'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
-        body: jsonEncode({
-          'password': 'wvLb5bkBkDgK2UfTXYhAtHEJyNqtaZUf',
-          'data': encryptedData
-        }),
+        body: jsonEncode({'password': _password, 'data': encryptedData}),
       );
 
       if (response.statusCode != 200) {
         print('Failed to send data. Status code: ${response.statusCode}');
+        print('Error details: ${response.body}');
         return false;
       }
 
-      print('Response received: ${response.body}');
-
-      if (response.body != 'Data saved successfully') return false;
+      if (response.body.trim() != 'Data saved successfully') {
+        print('Upload failed. Server response: ${response.body}');
+        return false;
+      }
 
       print('Data sent successfully.');
       return true;
@@ -172,10 +254,10 @@ class Cards with ChangeNotifier {
   }
 }
 
-bool isTag(String value){
+bool isTag(String value) {
   return RegExp(r'^#[^ #\n*]+$').hasMatch(value);
 }
 
-String markTag(String tag){
+String markTag(String tag) {
   return '#*${tag.substring(1)}';
 }

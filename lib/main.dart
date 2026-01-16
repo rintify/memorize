@@ -39,8 +39,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(child: MainView())),
+          backgroundColor: Colors.white, body: SafeArea(child: MainView())),
       debugShowCheckedModeBanner: false,
       theme: ThemeData(),
     );
@@ -57,7 +56,8 @@ class MainView extends HookWidget {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!isInteger(pageController.page)) return;
       if (cards.deck.indexOf(cards.current) == pageController.page) return;
-      int pageIndex = cards.deck.indexOf(findClosestCard(cards.current, cards.deck));
+      int pageIndex =
+          cards.deck.indexOf(findClosestCard(cards.current, cards.deck));
       if (pageIndex != -1) {
         pageController.jumpToPage(pageIndex);
       }
@@ -75,7 +75,7 @@ class MainView extends HookWidget {
           color: Colors.white,
           child: Row(
             children: [
-              SearchTextField(onSearch: (a){
+              SearchTextField(onSearch: (a) {
                 cards.setFilter(a);
               }),
               GestureDetector(
@@ -117,7 +117,7 @@ class MainView extends HookWidget {
               IconButton(
                 icon: const Icon(Icons.info_outline),
                 onPressed: () {
-                  editText(context,setumei,(result){});
+                  editText(context, setumei, (result) {});
                 },
               ),
               PopupMenuButton<int>(
@@ -125,7 +125,8 @@ class MainView extends HookWidget {
                 onSelected: (value) {
                   switch (value) {
                     case 1:
-                      confirmDialog(context, 'ダウンロードしますか？\nいままでのデータは上書きされます', () {
+                      confirmDialog(context, 'ダウンロードしますか？\nいままでのデータは上書きされます',
+                          () {
                         cards.download().then((res) {
                           showToast(context, res ? '成功' : '失敗');
                         });
@@ -142,6 +143,9 @@ class MainView extends HookWidget {
                         cards.save();
                       });
                       break;
+                    case 4:
+                      showSettingsDialog(context, cards);
+                      break;
                   }
                 },
                 itemBuilder: (context) => [
@@ -156,12 +160,17 @@ class MainView extends HookWidget {
                   const PopupMenuItem(
                     value: 3,
                     child: Text("データ編集"),
-                  )
+                  ),
+                  const PopupMenuItem(
+                    value: 4,
+                    child: Text("設定"),
+                  ),
                 ],
               ),
               IconButton(
                 icon: const Icon(Icons.menu_book),
-                onPressed: () => showPagePicker(context, cards.current, (index) {
+                onPressed: () =>
+                    showPagePicker(context, cards.current, (index) {
                   cards.setCurrent(cards.deck[index]);
                 }),
               ),
@@ -178,13 +187,17 @@ class MainView extends HookWidget {
             cards.setCurrent(cards.deck[index], false);
           },
           itemBuilder: (BuildContext context, int index) {
-            if(index >= cards.deck.length){
-              return Center(child: TextButton(child: const Text('はじめに戻る'),onPressed: (){
-                cards.updateDeck();
-                WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (index >= cards.deck.length) {
+              return Center(
+                  child: TextButton(
+                child: const Text('はじめに戻る'),
+                onPressed: () {
+                  cards.updateDeck();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
                     pageController.jumpToPage(0);
-                });
-              },));
+                  });
+                },
+              ));
             }
             if (index < 0) return Container();
             final card = cards.getCard(cards.deck[index]);
@@ -192,24 +205,76 @@ class MainView extends HookWidget {
 
             return ChangeNotifierProvider.value(
               value: cards.getCard(cards.deck[index])!,
-              child: mode.value == 0 ? NormalModeView()
-                  : mode.value == 1 ? BlankModeView()
-                  : mode.value == 2 ? SegmentModeView()
-                  : mode.value == 3 ? TestModeView() 
-                  : mode.value == 4 ? SegmentBlankModeView()
-                  : NormalModeView(),
-                    
+              child: mode.value == 0
+                  ? NormalModeView()
+                  : mode.value == 1
+                      ? BlankModeView()
+                      : mode.value == 2
+                          ? SegmentModeView()
+                          : mode.value == 3
+                              ? TestModeView()
+                              : mode.value == 4
+                                  ? SegmentBlankModeView()
+                                  : NormalModeView(),
             );
-          }
-        ),
-        bottomNavigationBar: SizedBox(
-          height: 3,
-          child: Align(
-            alignment: AlignmentDirectional.bottomStart,
-            child: Container(color: Colors.blue, height:  3, 
-              width: clampDouble(cards.deck.indexOf(cards.current)/cards.deck.length, 0, 1)*MediaQuery.of(context).size.width,),
+          }),
+      bottomNavigationBar: SizedBox(
+        height: 3,
+        child: Align(
+          alignment: AlignmentDirectional.bottomStart,
+          child: Container(
+            color: Colors.blue,
+            height: 3,
+            width: clampDouble(
+                    cards.deck.indexOf(cards.current) / cards.deck.length,
+                    0,
+                    1) *
+                MediaQuery.of(context).size.width,
           ),
         ),
+      ),
     );
   }
+}
+void showSettingsDialog(BuildContext context, Cards cards) {
+  final urlController = TextEditingController(text: cards.url);
+  final passwordController = TextEditingController(text: cards.password);
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('設定'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: urlController,
+              decoration: const InputDecoration(labelText: 'クラウドURL'),
+            ),
+            TextField(
+              controller: passwordController,
+              decoration: const InputDecoration(labelText: 'パスワード'),
+              obscureText: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () {
+              cards.saveSettings(urlController.text, passwordController.text);
+              Navigator.of(context).pop();
+            },
+            child: const Text('保存'),
+          ),
+        ],
+      );
+    },
+  );
 }

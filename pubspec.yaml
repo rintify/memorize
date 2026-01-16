@@ -38,6 +38,7 @@ dependencies:
   vector_math: ^2.1.4
   petitparser: ^6.0.2
   flutter_js: ^0.8.1
+  shared_preferences: ^2.2.0
   
 
 flutter_icons:

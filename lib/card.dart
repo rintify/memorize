@@ -5,17 +5,17 @@ import 'package:memorize/CardText.dart';
 import 'package:memorize/Cards.dart';
 import 'package:provider/provider.dart';
 
-class Card with ChangeNotifier{
+class Card with ChangeNotifier {
   late CardText _question;
   late CardText _answer;
   late Set<String> _tags;
   final int key;
 
-  Card(this.key, String script){
+  Card(this.key, String script) {
     setScript(script);
   }
 
-  UnmodifiableListView<String> get tags{
+  UnmodifiableListView<String> get tags {
     return UnmodifiableListView(_tags);
   }
 
@@ -23,28 +23,28 @@ class Card with ChangeNotifier{
 
   CardText get answer => _answer;
 
-  void notify(){
+  void notify() {
     notifyListeners();
   }
 
-  void addTag(String tag){
+  void addTag(String tag) {
     _tags.add(tag);
     notifyListeners();
   }
 
-  void removeTag(String tag){
+  void removeTag(String tag) {
     _tags.remove(tag);
     notifyListeners();
   }
 
   void setScript(String script) {
     final a = script.split('\n##\n');
-    final blocks = List.generate(3,(i) => i < a.length ? a[i] : '');
+    final blocks = List.generate(3, (i) => i < a.length ? a[i] : '');
 
     _question = CardText(blocks[0]);
     _answer = CardText(blocks[1]);
     _tags = Set.from(blocks[2].split(' '));
-    
+
     notifyListeners();
   }
 
