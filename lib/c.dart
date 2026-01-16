@@ -145,6 +145,8 @@ Widget CardTextView(CardText cs,
     if (lineI >= cs.lines.length) break;
   }
 
+  bool truncated = pos < cs.runes.length;
+
   return Row(
     mainAxisSize: MainAxisSize.min,
     textDirection: TextDirection.rtl,
@@ -157,6 +159,9 @@ Widget CardTextView(CardText cs,
           children: [
             for (var i = viewLines[j].start; i < viewLines[j].end; i++)
               cview(cs, i),
+            ...(truncated && j == viewLines.length - 1
+                ? [character('…'.runes.first, style)]
+                : []),
             ...(end && j == viewLines.length - 1
                 ? [
                     const Text('﹂',

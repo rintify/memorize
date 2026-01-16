@@ -15,16 +15,13 @@ import 'package:provider/provider.dart';
 import 'package:memorize/Cards.dart';
 import 'package:memorize/editText.dart';
 import 'package:memorize/ModeNormal.dart';
-import 'package:flutter/services.dart' show rootBundle;
-
-String setumei = '';
+import 'package:memorize/UsageGuide.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final cards = Cards();
   await cards.load();
-  setumei = await rootBundle.loadString('assets/help.txt');
 
   runApp(
     ChangeNotifierProvider(
@@ -117,7 +114,10 @@ class MainView extends HookWidget {
               IconButton(
                 icon: const Icon(Icons.info_outline),
                 onPressed: () {
-                  editText(context, setumei, (result) {});
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (context) => UsageGuideView(text: '')),
+                  );
                 },
               ),
               PopupMenuButton<int>(
@@ -236,6 +236,7 @@ class MainView extends HookWidget {
     );
   }
 }
+
 void showSettingsDialog(BuildContext context, Cards cards) {
   final urlController = TextEditingController(text: cards.url);
   final passwordController = TextEditingController(text: cards.password);
