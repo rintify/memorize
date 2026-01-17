@@ -12,7 +12,6 @@ import 'package:memorize/util.dart';
 import 'package:provider/provider.dart';
 
 class NormalModeView extends HookWidget {
-
   NormalModeView();
 
   @override
@@ -21,36 +20,44 @@ class NormalModeView extends HookWidget {
     final card = Provider.of<Card>(context);
     final cards = Provider.of<Cards>(context);
 
+    final fontSize = MediaQuery.of(context).size.width < 600 ? 15.0 : 17.0;
+
     return CardView(
       child: Container(
         alignment: Alignment.center,
-        child: CardTextView(card.answer,cview: (cs, pos) {
-          final segm = cs.findSegment(pos);
-                if (segm.tags.contains(cards.tag)) {
-                  return CView(cs, pos, segm, Colors.amber.withAlpha(200), () {
-                    segm.tags.remove(cards.tag);
-                    segm.tags.add(markTag(cards.tag));
-                    card.notify();
-                    cards.setCard(card.key, card, false);
-                    cards.save();
-                  });
-                } else if (segm.tags.contains(markTag(cards.tag))) {
-                  return CView(cs, pos, segm, Colors.blue.withAlpha(150), () {
-                    segm.tags.remove(markTag(cards.tag));
-                    card.notify();
-                    cards.setCard(card.key, card, false);
-                    cards.save();
-                  });
-                } else {
-                  return CView(cs, pos, segm, null, () {
-                    segm.tags.remove(markTag(cards.tag));
-                    segm.tags.add(cards.tag);
-                    card.notify();
-                    cards.setCard(card.key, card, false);
-                    cards.save();
-                  });
-                }
-        },),
+        child: CardTextView(
+          card.answer,
+          fontSize: fontSize,
+          cview: (cs, pos, fontSize) {
+            final segm = cs.findSegment(pos);
+            if (segm.tags.contains(cards.tag)) {
+              return CView(cs, pos, segm, Colors.amber.withAlpha(200), fontSize,
+                  () {
+                segm.tags.remove(cards.tag);
+                segm.tags.add(markTag(cards.tag));
+                card.notify();
+                cards.setCard(card.key, card, false);
+                cards.save();
+              });
+            } else if (segm.tags.contains(markTag(cards.tag))) {
+              return CView(cs, pos, segm, Colors.blue.withAlpha(150), fontSize,
+                  () {
+                segm.tags.remove(markTag(cards.tag));
+                card.notify();
+                cards.setCard(card.key, card, false);
+                cards.save();
+              });
+            } else {
+              return CView(cs, pos, segm, null, fontSize, () {
+                segm.tags.remove(markTag(cards.tag));
+                segm.tags.add(cards.tag);
+                card.notify();
+                cards.setCard(card.key, card, false);
+                cards.save();
+              });
+            }
+          },
+        ),
       ),
     );
   }

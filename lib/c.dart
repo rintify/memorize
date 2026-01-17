@@ -104,28 +104,18 @@ class Hurigana extends Range {
       : super(start: start, end: end);
 }
 
-const double fontSize = 17;
-const TextStyle style = TextStyle(
+TextStyle makeStyle(double fontSize) => TextStyle(
     fontSize: fontSize, color: Colors.black, height: 1, fontFamily: 'Sex');
-const TextStyle qstyle = TextStyle(
+TextStyle makeQStyle(double fontSize) => TextStyle(
     fontSize: fontSize, color: Colors.red, height: 1, fontFamily: 'Sex');
-const TextStyle hstyle =
+TextStyle makeHStyle(double fontSize) =>
     TextStyle(fontSize: fontSize * 0.4, height: 1, fontFamily: 'Sex');
-final space = (style.fontSize ?? 0) * 0.4;
-
-final textPainter = TextPainter(
-    text: const TextSpan(
-      text: 'あ',
-      style: style,
-    ),
-    textDirection: TextDirection.ltr);
-
-final fontoRatio = (textPainter..layout()).height / fontSize;
 
 Widget CardTextView(CardText cs,
-    {Widget Function(CardText cs, int pos) cview = noqchar,
+    {Widget Function(CardText cs, int pos, double fontSize) cview = noqchar,
     bool end = false,
-    int? maxLines}) {
+    int? maxLines,
+    double fontSize = 17}) {
   final List<Range> viewLines = [];
   int lineI = 0;
   int pos = cs.lines[lineI];
@@ -146,6 +136,7 @@ Widget CardTextView(CardText cs,
   }
 
   bool truncated = pos < cs.runes.length;
+  final style = makeStyle(fontSize);
 
   return Row(
     mainAxisSize: MainAxisSize.min,
@@ -158,7 +149,7 @@ Widget CardTextView(CardText cs,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             for (var i = viewLines[j].start; i < viewLines[j].end; i++)
-              cview(cs, i),
+              cview(cs, i, fontSize),
             ...(truncated && j == viewLines.length - 1
                 ? [character('…'.runes.first, style)]
                 : []),
@@ -175,10 +166,13 @@ Widget CardTextView(CardText cs,
   );
 }
 
-Widget noqchar(CardText cs, int pos) {
+Widget noqchar(CardText cs, int pos, double fontSize) {
   final hurigana = find(cs.huriganas, (h) => h.start == pos);
   final char = cs.runes[pos];
   final isMarked = cs.marks.contains(pos);
+
+  final style = makeStyle(fontSize);
+  final hstyle = makeHStyle(fontSize);
 
   Widget charWidget = character(char, style);
 
@@ -218,7 +212,8 @@ Widget noqchar(CardText cs, int pos) {
 }
 
 Widget character(int rune, TextStyle style) {
-  final fontSize = style.fontSize ?? 1;
+  final fontSize = style.fontSize ?? 17;
+  final space = fontSize * 0.4;
   final h = fontSize * 1.03, w = space * 2 + fontSize;
 
   if (rune >= EXTRA_FIRST_CODE) {

@@ -13,13 +13,14 @@ import 'package:memorize/c.dart';
 import 'package:provider/provider.dart';
 
 class BlankModeView extends HookWidget {
-
   BlankModeView();
 
   @override
   Widget build(BuildContext context) {
     final card = Provider.of<Card>(context);
     final current = useState<int>(0);
+
+    final fontSize = MediaQuery.of(context).size.width < 600 ? 15.0 : 17.0;
 
     return CurrentGestureController(
       setCurrent: (i) {
@@ -30,20 +31,26 @@ class BlankModeView extends HookWidget {
       },
       child: CardView(
         buttons: [
-          IconButton(onPressed: (){
-            current.value--;
-            if(current.value < 0) current.value = 0;
-          },
-          icon: Icon(Icons.undo)),
+          IconButton(
+              onPressed: () {
+                current.value--;
+                if (current.value < 0) current.value = 0;
+              },
+              icon: Icon(Icons.undo)),
         ],
         child: Container(
           color: Color(0),
           alignment: Alignment.center,
-          child: CardTextView(card.answer, cview: (cs, pos) {
-            final blank = findRange(cs.blanks, pos);
-            if(blank == null || blank.id < current.value) return noqchar(cs, pos);
-            return character('？'.codeUnitAt(0), qstyle);
-          },),
+          child: CardTextView(
+            card.answer,
+            fontSize: fontSize,
+            cview: (cs, pos, fontSize) {
+              final blank = findRange(cs.blanks, pos);
+              if (blank == null || blank.id < current.value)
+                return noqchar(cs, pos, fontSize);
+              return character('？'.codeUnitAt(0), makeQStyle(fontSize));
+            },
+          ),
         ),
       ),
     );

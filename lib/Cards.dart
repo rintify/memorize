@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart' show ChangeNotifier;
-import 'package:memorize/TagPicker.dart';
+
 import 'package:memorize/parser.dart';
 import 'package:memorize/util.dart';
 import 'package:path_provider/path_provider.dart';
@@ -128,7 +128,7 @@ class Cards with ChangeNotifier {
         final savedData = prefs.getString('card_data');
         if (savedData != null && savedData.isNotEmpty) {
           setScripts(savedData);
-          setTag(extractHashTags(_cardScripts).first);
+
           loaded = true;
         }
       }
@@ -146,7 +146,7 @@ class Cards with ChangeNotifier {
         if (await file.exists()) {
           final read = await file.readAsString();
           setScripts(read);
-          setTag(extractHashTags(_cardScripts).first);
+
           loaded = true;
         }
       } catch (e) {
@@ -214,6 +214,7 @@ class Cards with ChangeNotifier {
 
       final script = decryptData(response.body);
       setScripts(script);
+      await save();
 
       return true;
     } catch (e) {
